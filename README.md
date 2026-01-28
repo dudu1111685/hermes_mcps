@@ -104,6 +104,35 @@ Add to your Cline MCP settings (`~/.vscode/mcp.json` or workspace settings):
 }
 ```
 
+### Claude Code (Autonomous Development)
+
+**🤖 For AI-powered development with automatic question handling:**
+
+Claude Code and similar AI assistants can use the `ask_user_via_whatsapp` tool to ask questions and continue working autonomously.
+
+**Setup:**
+1. Configure MCP as shown above (same config as Claude Desktop)
+2. Create a `.whatsapp-chat-id` file in your project:
+   ```bash
+   echo "YOUR_PHONE@c.us" > .whatsapp-chat-id
+   ```
+3. Claude Code will now ask questions via WhatsApp instead of stopping!
+
+**📖 Read [`CLAUDE_CODE_INSTRUCTIONS.md`](./CLAUDE_CODE_INSTRUCTIONS.md) for detailed usage instructions.**
+
+**Example workflow:**
+```typescript
+// Claude Code hits a question while building
+const answer = await ask_user_via_whatsapp({
+  question: "Should I use REST or GraphQL?",
+  chatId: "1234567890@c.us",
+  timeoutMinutes: 30
+});
+// You reply from your phone → Claude continues working
+```
+
+This enables truly autonomous AI development - Claude asks questions via WhatsApp, you answer from anywhere, work continues! 🚀
+
 ### Other MCP Clients
 
 Use the `mcporter` CLI for quick testing:

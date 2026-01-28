@@ -1,0 +1,56 @@
+# AI Assistant Rules for WAHA MCP
+
+## Core Instruction
+
+When working with this codebase and you need user input, clarification, or approval:
+
+**DO NOT stop and wait for console input.**
+
+**INSTEAD: Use the `ask_user_via_whatsapp` MCP tool to ask questions and continue working.**
+
+---
+
+## Default Workflow
+
+1. Hit a question or need clarification
+2. Call `ask_user_via_whatsapp({ question: "Your question here", chatId: "user_chat_id@c.us" })`
+3. Wait for reply (tool is blocking)
+4. Parse the answer
+5. Continue working
+
+---
+
+## Example
+
+```typescript
+// ❌ Don't do this:
+// "I need to know if you want error logging. Please tell me."
+
+// ✅ Do this:
+const answer = await ask_user_via_whatsapp({
+  question: "Should I add detailed error logging? (yes/no)",
+  chatId: "1234567890@c.us",
+  timeoutMinutes: 20
+});
+
+if (answer.toLowerCase().includes("yes")) {
+  // Implement logging
+}
+// Continue working
+```
+
+---
+
+## When to Use
+
+- Architectural decisions
+- Missing requirements
+- Ambiguous specs
+- API credentials
+- Any blocking question
+
+**Goal:** Keep working autonomously. Use WhatsApp to unblock yourself.
+
+---
+
+See `CLAUDE_CODE_INSTRUCTIONS.md` for detailed examples and best practices.
