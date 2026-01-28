@@ -17,7 +17,34 @@ export function registerMessageTools(server: McpServer, client: WAHAClient): voi
     },
     async ({ chatId, text, session, replyTo, mentions, linkPreview }) => {
       try {
-        const body: Record<string, unknown> = { session, chatId, text };
+        // Auto-fix mentions: ensure phone numbers are in the text
+        let finalText = text;
+        if (mentions && mentions.length > 0 && !mentions.includes('all')) {
+          const missingNumbers: string[] = [];
+          
+          for (const mention of mentions) {
+            // Extract phone number from mention (e.g., "972516008000@c.us" -> "972516008000")
+            const phoneMatch = mention.match(/^(\d+)@/);
+            if (phoneMatch) {
+              const phoneNumber = phoneMatch[1];
+              const mentionTag = `@${phoneNumber}`;
+              
+              // Check if the text already contains this mention
+              if (!finalText.includes(mentionTag)) {
+                missingNumbers.push(mentionTag);
+                console.warn(`[WAHA MCP] Mention missing in text: ${mentionTag} not found in "${text}"`);
+              }
+            }
+          }
+          
+          // Auto-fix: append missing mentions to the text
+          if (missingNumbers.length > 0) {
+            finalText = `${text} ${missingNumbers.join(' ')}`.trim();
+            console.warn(`[WAHA MCP] Auto-fixed text with missing mentions: "${finalText}"`);
+          }
+        }
+
+        const body: Record<string, unknown> = { session, chatId, text: finalText };
         if (replyTo) body.reply_to = replyTo;
         if (mentions) body.mentions = mentions;
         if (linkPreview !== undefined) body.linkPreview = linkPreview;
