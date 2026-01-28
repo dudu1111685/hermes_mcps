@@ -10,7 +10,7 @@
   [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
   
-  [Documentation](./docs/README.md) • [Installation](#installation) • [Configuration](#configuration) • [Tools Reference](#tools-reference)
+  [Documentation](./docs/README.md) • [Installation](#installation) • [Configuration](#configuration) • [🤖 Claude Code Setup](./CLAUDE_CODE_SETUP.md) • [Tools Reference](#tools-reference)
 </div>
 
 ---
@@ -106,32 +106,38 @@ Add to your Cline MCP settings (`~/.vscode/mcp.json` or workspace settings):
 
 ### Claude Code (Autonomous Development)
 
-**🤖 For AI-powered development with automatic question handling:**
+**🤖 Enable truly autonomous AI development:**
 
-Claude Code and similar AI assistants can use the `ask_user_via_whatsapp` tool to ask questions and continue working autonomously.
+Instead of Claude stopping when it needs user input, it can ask questions via WhatsApp and continue working!
 
-**Setup:**
-1. Configure MCP as shown above (same config as Claude Desktop)
-2. Create a `.whatsapp-chat-id` file in your project:
-   ```bash
-   echo "YOUR_PHONE@c.us" > .whatsapp-chat-id
-   ```
-3. Claude Code will now ask questions via WhatsApp instead of stopping!
+**🚀 Complete Setup Guide:** **[`CLAUDE_CODE_SETUP.md`](./CLAUDE_CODE_SETUP.md)**
 
-**📖 Read [`CLAUDE_CODE_INSTRUCTIONS.md`](./CLAUDE_CODE_INSTRUCTIONS.md) for detailed usage instructions.**
-
-**Example workflow:**
-```typescript
-// Claude Code hits a question while building
-const answer = await ask_user_via_whatsapp({
-  question: "Should I use REST or GraphQL?",
-  chatId: "1234567890@c.us",
-  timeoutMinutes: 30
-});
-// You reply from your phone → Claude continues working
+**Quick config example:**
+```json
+{
+  "mcpServers": {
+    "waha": {
+      "command": "node",
+      "args": ["/path/to/waha-mcp/dist/index.js"],
+      "env": {
+        "WAHA_API_KEY": "your-key",
+        "USER_WHATSAPP_CHAT_ID": "1234567890@c.us"
+      }
+    }
+  },
+  "globalInstructions": "When you need user input during development, use ask_user_via_whatsapp tool. Never stop and wait for manual console input."
+}
 ```
 
-This enables truly autonomous AI development - Claude asks questions via WhatsApp, you answer from anywhere, work continues! 🚀
+**How it works:**
+1. Claude hits a question → asks via WhatsApp
+2. You reply from your phone
+3. Claude continues working immediately
+4. Zero downtime! ⚡
+
+**📖 See also:**
+- [`CLAUDE_CODE_SETUP.md`](./CLAUDE_CODE_SETUP.md) - Complete setup guide
+- [`CLAUDE_CODE_INSTRUCTIONS.md`](./CLAUDE_CODE_INSTRUCTIONS.md) - Usage examples for AI assistants
 
 ### Other MCP Clients
 

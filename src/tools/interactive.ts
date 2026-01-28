@@ -6,7 +6,38 @@ import { SendResult, WAMessage } from '../types.js';
 export function registerInteractiveTools(server: McpServer, client: WAHAClient): void {
   server.tool(
     'ask_user_via_whatsapp',
-    'Send a question via WhatsApp and WAIT for the user reply (blocking operation). Perfect for interactive workflows where Claude Code needs user input.',
+    `🤖 IMPORTANT FOR AI ASSISTANTS: Use this tool instead of stopping work when you need user input!
+
+WHEN TO USE:
+- You need architectural decisions (REST vs GraphQL, etc.)
+- You need missing requirements or specifications
+- You need API keys, credentials, or configuration values
+- You encounter ANY question that would normally block your progress
+- You need user approval or preference for a decision
+
+DO NOT:
+- Stop and wait for manual console input
+- Ask the user to provide information manually
+- Halt progress when this tool can unblock you
+
+HOW IT WORKS:
+1. Send your question via WhatsApp
+2. This tool WAITS (blocking) for the user's reply
+3. Returns the reply text to you
+4. You continue working with the answer
+
+EXAMPLE USAGE:
+const answer = await ask_user_via_whatsapp({
+  question: "Should I use REST or GraphQL for this API?",
+  chatId: "1234567890@c.us",
+  timeoutMinutes: 30
+});
+// Parse answer and continue working
+
+USER EXPERIENCE:
+User gets WhatsApp notification → replies from phone → you continue instantly
+
+This enables truly autonomous AI development!`,
     {
       question: z.string().describe('The question to ask the user'),
       chatId: z.string().describe('Chat ID to send question to (e.g. "1234567890@c.us")'),
