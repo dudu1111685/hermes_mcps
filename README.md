@@ -92,10 +92,10 @@ Add to your Cline MCP settings:
 | Tool | Description |
 |------|-------------|
 | `waha_send_text` | Send a text message |
-| `waha_send_image` | Send an image |
-| `waha_send_video` | Send a video |
-| `waha_send_voice` | Send a voice message |
-| `waha_send_file` | Send a document/file |
+| `waha_send_image` | Send an image (from local file OR URL) |
+| `waha_send_video` | Send a video (from local file OR URL, auto-converts) |
+| `waha_send_voice` | Send a voice message (from local file OR URL, auto-converts) |
+| `waha_send_file` | Send a document/file (from local file OR URL) |
 | `waha_send_location` | Send a location |
 | `waha_send_contact` | Send a contact card (vCard) |
 | `waha_send_poll` | Create and send a poll |
@@ -106,6 +106,30 @@ Add to your Cline MCP settings:
 | `waha_edit_message` | Edit a sent message |
 | `waha_mark_as_read` | Mark messages as read |
 | `waha_star_message` | Star or unstar a message |
+
+#### 📤 Sending Media Files
+
+All media sending functions (`send_image`, `send_video`, `send_voice`, `send_file`) now support **both local files AND URLs**:
+
+**From Local File:**
+```bash
+mcporter call 'waha-mcp.waha_send_image(chatId: "123@c.us", imagePath: "/tmp/photo.jpg", caption: "Check this out!")'
+mcporter call 'waha-mcp.waha_send_video(chatId: "123@g.us", videoPath: "/tmp/video.mp4")'
+mcporter call 'waha-mcp.waha_send_voice(chatId: "123@c.us", audioPath: "/tmp/voice.mp3")'
+mcporter call 'waha-mcp.waha_send_file(chatId: "123@c.us", filePath: "/tmp/report.pdf", caption: "Report")'
+```
+
+**From URL:**
+```bash
+mcporter call 'waha-mcp.waha_send_image(chatId: "123@c.us", imageUrl: "https://example.com/image.jpg")'
+mcporter call 'waha-mcp.waha_send_video(chatId: "123@c.us", videoUrl: "https://example.com/video.mp4")'
+```
+
+**Features:**
+- 🎯 **Auto-detection**: MIME types and filenames are automatically detected from file extensions
+- 🔄 **Auto-conversion**: Voice and video messages are automatically converted to WhatsApp format (set `convert: false` to disable)
+- 📁 **Wide format support**: 50+ file types supported (images, videos, audio, documents, archives, code files)
+- ⚡ **Base64 encoding**: Local files are automatically encoded and sent to WAHA
 
 ### Chat Management
 | Tool | Description |

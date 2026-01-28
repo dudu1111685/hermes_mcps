@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { WAHAClient } from '../client.js';
 import { SendResult, WAMessage } from '../types.js';
+import { fileToBase64 } from '../utils/file-utils.js';
 
 export function registerMessageTools(server: McpServer, client: WAHAClient): void {
   server.tool(
@@ -64,21 +65,37 @@ export function registerMessageTools(server: McpServer, client: WAHAClient): voi
 
   server.tool(
     'waha_send_image',
-    'Send an image to a WhatsApp chat',
+    'Send an image to a WhatsApp chat (from local file OR URL)',
     {
       chatId: z.string().describe('Chat ID'),
-      imageUrl: z.string().describe('URL of the image to send'),
+      imagePath: z.string().optional().describe('Local file path (e.g., "/tmp/photo.jpg")'),
+      imageUrl: z.string().optional().describe('URL of the image to send'),
       caption: z.string().optional().describe('Image caption'),
       session: z.string().default('default').describe('Session name'),
       replyTo: z.string().optional().describe('Message ID to reply to'),
     },
-    async ({ chatId, imageUrl, caption, session, replyTo }) => {
+    async ({ chatId, imagePath, imageUrl, caption, session, replyTo }) => {
       try {
-        const body: Record<string, unknown> = {
-          session,
-          chatId,
-          file: { mimetype: 'image/jpeg', url: imageUrl },
-        };
+        // Validate: require one of imagePath or imageUrl
+        if (!imagePath && !imageUrl) {
+          throw new Error('Either imagePath or imageUrl must be provided');
+        }
+        if (imagePath && imageUrl) {
+          throw new Error('Provide either imagePath OR imageUrl, not both');
+        }
+
+        let fileObj: Record<string, unknown>;
+
+        if (imagePath) {
+          // Read local file and convert to base64
+          const { data, mimetype, filename } = await fileToBase64(imagePath);
+          fileObj = { data, mimetype, filename };
+        } else {
+          // Use URL (existing behavior)
+          fileObj = { url: imageUrl, mimetype: 'image/jpeg' };
+        }
+
+        const body: Record<string, unknown> = { session, chatId, file: fileObj };
         if (caption) body.caption = caption;
         if (replyTo) body.reply_to = replyTo;
 
@@ -97,20 +114,34 @@ export function registerMessageTools(server: McpServer, client: WAHAClient): voi
 
   server.tool(
     'waha_send_video',
-    'Send a video to a WhatsApp chat',
+    'Send a video to a WhatsApp chat (from local file OR URL)',
     {
       chatId: z.string().describe('Chat ID'),
-      videoUrl: z.string().describe('URL of the video to send (MP4 format preferred)'),
+      videoPath: z.string().optional().describe('Local file path (e.g., "/tmp/video.mp4")'),
+      videoUrl: z.string().optional().describe('URL of the video to send (MP4 format preferred)'),
       caption: z.string().optional().describe('Video caption'),
+      convert: z.boolean().default(true).describe('Auto-convert to WhatsApp format'),
       session: z.string().default('default').describe('Session name'),
     },
-    async ({ chatId, videoUrl, caption, session }) => {
+    async ({ chatId, videoPath, videoUrl, caption, convert, session }) => {
       try {
-        const body: Record<string, unknown> = {
-          session,
-          chatId,
-          file: { mimetype: 'video/mp4', url: videoUrl },
-        };
+        if (!videoPath && !videoUrl) {
+          throw new Error('Either videoPath or videoUrl must be provided');
+        }
+        if (videoPath && videoUrl) {
+          throw new Error('Provide either videoPath OR videoUrl, not both');
+        }
+
+        let fileObj: Record<string, unknown>;
+
+        if (videoPath) {
+          const { data, mimetype, filename } = await fileToBase64(videoPath);
+          fileObj = { data, mimetype, filename };
+        } else {
+          fileObj = { url: videoUrl, mimetype: 'video/mp4' };
+        }
+
+        const body: Record<string, unknown> = { session, chatId, file: fileObj, convert };
         if (caption) body.caption = caption;
 
         const result = await client.post<SendResult>('/api/sendVideo', body);
@@ -128,18 +159,37 @@ export function registerMessageTools(server: McpServer, client: WAHAClient): voi
 
   server.tool(
     'waha_send_voice',
-    'Send a voice message to a WhatsApp chat',
+    'Send a voice message to a WhatsApp chat (from local file OR URL)',
     {
       chatId: z.string().describe('Chat ID'),
-      audioUrl: z.string().describe('URL of the audio file (OGG/Opus format preferred)'),
+      audioPath: z.string().optional().describe('Local file path (e.g., "/tmp/voice.mp3")'),
+      audioUrl: z.string().optional().describe('URL of the audio file (OGG/Opus format preferred)'),
+      convert: z.boolean().default(true).describe('Auto-convert to Opus format (recommended for MP3/WAV)'),
       session: z.string().default('default').describe('Session name'),
     },
-    async ({ chatId, audioUrl, session }) => {
+    async ({ chatId, audioPath, audioUrl, convert, session }) => {
       try {
+        if (!audioPath && !audioUrl) {
+          throw new Error('Either audioPath or audioUrl must be provided');
+        }
+        if (audioPath && audioUrl) {
+          throw new Error('Provide either audioPath OR audioUrl, not both');
+        }
+
+        let fileObj: Record<string, unknown>;
+
+        if (audioPath) {
+          const { data, mimetype, filename } = await fileToBase64(audioPath);
+          fileObj = { data, mimetype, filename };
+        } else {
+          fileObj = { url: audioUrl, mimetype: 'audio/ogg; codecs=opus' };
+        }
+
         const result = await client.post<SendResult>('/api/sendVoice', {
           session,
           chatId,
-          file: { mimetype: 'audio/ogg; codecs=opus', url: audioUrl },
+          file: fileObj,
+          convert,
         });
         return {
           content: [{ type: 'text', text: `Voice message sent successfully.\nMessage ID: ${result.id}` }],
@@ -155,21 +205,62 @@ export function registerMessageTools(server: McpServer, client: WAHAClient): voi
 
   server.tool(
     'waha_send_file',
-    'Send a document/file to a WhatsApp chat',
+    'Send a document/file to a WhatsApp chat (from local file OR URL)',
     {
       chatId: z.string().describe('Chat ID'),
-      fileUrl: z.string().describe('URL of the file to send'),
-      mimetype: z.string().default('application/octet-stream').describe('File MIME type (e.g. "application/pdf")'),
-      filename: z.string().optional().describe('Display filename'),
+      filePath: z.string().optional().describe('Local file path (e.g., "/tmp/document.pdf")'),
+      fileUrl: z.string().optional().describe('URL of the file to send (can be HTTP URL or data: URL)'),
+      mimetype: z.string().optional().describe('File MIME type (auto-detected if using filePath)'),
+      filename: z.string().optional().describe('Display filename (auto-detected if using filePath)'),
       caption: z.string().optional().describe('File caption'),
       session: z.string().default('default').describe('Session name'),
     },
-    async ({ chatId, fileUrl, mimetype, filename, caption, session }) => {
+    async ({ chatId, filePath, fileUrl, mimetype, filename, caption, session }) => {
       try {
-        const file: Record<string, unknown> = { mimetype, url: fileUrl };
-        if (filename) file.filename = filename;
+        if (!filePath && !fileUrl) {
+          throw new Error('Either filePath or fileUrl must be provided');
+        }
+        if (filePath && fileUrl) {
+          throw new Error('Provide either filePath OR fileUrl, not both');
+        }
 
-        const body: Record<string, unknown> = { session, chatId, file };
+        let fileObj: Record<string, unknown>;
+
+        if (filePath) {
+          // Read local file and convert to base64
+          const fileData = await fileToBase64(filePath);
+          fileObj = { 
+            data: fileData.data, 
+            mimetype: mimetype || fileData.mimetype,
+            filename: filename || fileData.filename,
+          };
+        } else if (fileUrl) {
+          // Check if it's a data URL (data:mime;base64,...)
+          if (fileUrl.startsWith('data:')) {
+            // Extract the base64 part from data URL
+            const base64Match = fileUrl.match(/^data:[^;]+;base64,(.+)$/);
+            if (base64Match) {
+              fileObj = { 
+                data: base64Match[1], 
+                mimetype: mimetype || 'application/octet-stream',
+              };
+            } else {
+              fileObj = { url: fileUrl };
+            }
+          } else {
+            // Regular HTTP(S) URL
+            fileObj = { 
+              url: fileUrl, 
+              mimetype: mimetype || 'application/octet-stream',
+            };
+          }
+          
+          if (filename) fileObj.filename = filename;
+        } else {
+          throw new Error('No file source provided');
+        }
+
+        const body: Record<string, unknown> = { session, chatId, file: fileObj };
         if (caption) body.caption = caption;
 
         const result = await client.post<SendResult>('/api/sendFile', body);
