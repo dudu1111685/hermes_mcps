@@ -1,37 +1,75 @@
-# WAHA MCP Server
+<div align="center">
+  <img src=".github/logo.png" alt="WAHA MCP Logo" width="200"/>
+  
+  # WAHA MCP Server
+  
+  **WhatsApp HTTP API integration for Claude Desktop & MCP-compatible clients**
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
+  [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+  
+  [Documentation](./docs/README.md) • [Installation](#installation) • [Configuration](#configuration) • [Tools Reference](#tools-reference)
+</div>
 
-An MCP (Model Context Protocol) server for [WAHA (WhatsApp HTTP API)](https://waha.devlike.pro/). Lets you control WhatsApp through Claude Desktop, Cline, or any MCP-compatible client.
+---
 
-## Prerequisites
+## 🚀 What is WAHA MCP?
 
-- Node.js 18+
-- A running [WAHA](https://waha.devlike.pro/) instance
-- A WAHA API key
+WAHA MCP Server bridges the powerful [WAHA (WhatsApp HTTP API)](https://waha.devlike.pro/) with AI assistants like Claude Desktop, enabling seamless WhatsApp automation through the Model Context Protocol (MCP).
 
-## Setup
+### ✨ Key Features
+
+- 📱 **Complete WhatsApp Control** - Send/receive messages, manage chats, create groups
+- 🎯 **62 Tools** - Comprehensive API coverage for sessions, messaging, contacts, and groups
+- 🔄 **Smart Media Handling** - Auto-conversion for voice/video, support for URLs & local files
+- 🤖 **AI-Native** - Built specifically for LLM integration via MCP
+- 🔒 **Secure** - Environment-based API key management
+- ⚡ **Fast & Reliable** - TypeScript-powered with robust error handling
+
+---
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have:
+
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **A running WAHA instance** - [Setup guide](https://waha.devlike.pro/docs/how-to/install/)
+- **WAHA API Key** - Generated from your WAHA dashboard
+
+---
+
+## 🛠️ Installation
+
+### 1. Clone & Install
 
 ```bash
-# Clone and install
-git clone <repo-url>
+git clone https://github.com/dudu1111685/waha-mcp.git
 cd waha-mcp
 npm install
-
-# Build
 npm run build
 ```
 
-## Configuration
+### 2. Set Environment Variables
 
-Set two environment variables:
+Create a `.env` file or export variables:
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `WAHA_API_KEY` | Yes | - | Your WAHA API key |
-| `WAHA_URL` | No | `http://localhost:3001` | WAHA instance URL |
+```bash
+export WAHA_API_KEY="your-api-key-here"
+export WAHA_URL="http://localhost:3001"  # Optional, defaults to localhost:3001
+```
 
-## Usage with Claude Desktop
+---
 
-Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json` on Linux, `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+## ⚙️ Configuration
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+**Linux:** `~/.config/claude/claude_desktop_config.json`  
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -48,9 +86,9 @@ Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`
 }
 ```
 
-## Usage with Cline / VS Code
+### Cline / VS Code
 
-Add to your Cline MCP settings:
+Add to your Cline MCP settings (`~/.vscode/mcp.json` or workspace settings):
 
 ```json
 {
@@ -59,17 +97,31 @@ Add to your Cline MCP settings:
       "command": "node",
       "args": ["/absolute/path/to/waha-mcp/dist/index.js"],
       "env": {
-        "WAHA_API_KEY": "your-api-key-here",
-        "WAHA_URL": "http://localhost:3001"
+        "WAHA_API_KEY": "your-api-key-here"
       }
     }
   }
 }
 ```
 
-## Available Tools
+### Other MCP Clients
 
-### Session Management
+Use the `mcporter` CLI for quick testing:
+
+```bash
+mcporter call 'waha-mcp.waha_list_sessions()'
+mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello from MCP!")'
+```
+
+---
+
+## 🧰 Tools Reference
+
+### 📂 Categories
+
+<details>
+<summary><b>Session Management (8 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_list_sessions` | List all sessions and their statuses |
@@ -81,129 +133,251 @@ Add to your Cline MCP settings:
 | `waha_delete_session` | Delete a session permanently |
 | `waha_logout_session` | Disconnect WhatsApp account from session |
 
-### Authentication
+</details>
+
+<details>
+<summary><b>Authentication (3 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_get_qr_code` | Get QR code for WhatsApp authentication |
 | `waha_request_pairing_code` | Request phone number pairing code |
 | `waha_check_auth_status` | Check session authentication status |
 
-### Messaging
+</details>
+
+<details>
+<summary><b>Messaging (14 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_send_text` | Send a text message |
-| `waha_send_image` | Send an image (from local file OR URL) |
-| `waha_send_video` | Send a video (from local file OR URL, auto-converts) |
-| `waha_send_voice` | Send a voice message (from local file OR URL, auto-converts) |
-| `waha_send_file` | Send a document/file (from local file OR URL) |
-| `waha_send_location` | Send a location |
-| `waha_send_contact` | Send a contact card (vCard) |
+| `waha_send_image` | Send an image (local file or URL) |
+| `waha_send_video` | Send a video with auto-conversion |
+| `waha_send_voice` | Send a voice message with auto-conversion |
+| `waha_send_file` | Send any document/file |
+| `waha_send_location` | Send a location pin |
+| `waha_send_contact` | Send a contact vCard |
 | `waha_send_poll` | Create and send a poll |
-| `waha_react_to_message` | React to a message with an emoji |
-| `waha_forward_message` | Forward a message to another chat |
-| `waha_get_messages` | Get messages from a chat (with pagination) |
+| `waha_react_to_message` | React with emoji 👍❤️😂 |
+| `waha_forward_message` | Forward a message |
+| `waha_get_messages` | Get messages with pagination |
 | `waha_delete_message` | Delete a message |
 | `waha_edit_message` | Edit a sent message |
 | `waha_mark_as_read` | Mark messages as read |
-| `waha_star_message` | Star or unstar a message |
+| `waha_star_message` | Star/unstar a message |
 
-#### 📤 Sending Media Files
+**📤 Media Upload Features:**
+- ✅ Local files & URLs supported
+- ✅ Auto MIME type detection
+- ✅ Auto video/voice conversion to WhatsApp format
+- ✅ 50+ file types supported
+- ✅ Base64 encoding handled automatically
 
-All media sending functions (`send_image`, `send_video`, `send_voice`, `send_file`) now support **both local files AND URLs**:
+</details>
 
-**From Local File:**
-```bash
-mcporter call 'waha-mcp.waha_send_image(chatId: "123@c.us", imagePath: "/tmp/photo.jpg", caption: "Check this out!")'
-mcporter call 'waha-mcp.waha_send_video(chatId: "123@g.us", videoPath: "/tmp/video.mp4")'
-mcporter call 'waha-mcp.waha_send_voice(chatId: "123@c.us", audioPath: "/tmp/voice.mp3")'
-mcporter call 'waha-mcp.waha_send_file(chatId: "123@c.us", filePath: "/tmp/report.pdf", caption: "Report")'
-```
+<details>
+<summary><b>Chat Management (7 tools)</b></summary>
 
-**From URL:**
-```bash
-mcporter call 'waha-mcp.waha_send_image(chatId: "123@c.us", imageUrl: "https://example.com/image.jpg")'
-mcporter call 'waha-mcp.waha_send_video(chatId: "123@c.us", videoUrl: "https://example.com/video.mp4")'
-```
-
-**Features:**
-- 🎯 **Auto-detection**: MIME types and filenames are automatically detected from file extensions
-- 🔄 **Auto-conversion**: Voice and video messages are automatically converted to WhatsApp format (set `convert: false` to disable)
-- 📁 **Wide format support**: 50+ file types supported (images, videos, audio, documents, archives, code files)
-- ⚡ **Base64 encoding**: Local files are automatically encoded and sent to WAHA
-
-### Chat Management
 | Tool | Description |
 |------|-------------|
 | `waha_list_chats` | List all chats |
 | `waha_get_chat` | Get detailed chat info |
-| `waha_archive_chat` | Archive or unarchive a chat |
-| `waha_pin_chat` | Pin or unpin a chat |
-| `waha_mute_chat` | Mute or unmute a chat |
+| `waha_archive_chat` | Archive/unarchive a chat |
+| `waha_pin_chat` | Pin/unpin a chat |
+| `waha_mute_chat` | Mute/unmute a chat |
 | `waha_delete_chat` | Delete a chat |
-| `waha_clear_chat` | Clear all messages in a chat |
+| `waha_clear_chat` | Clear all messages |
 
-### Contacts
+</details>
+
+<details>
+<summary><b>Contacts (5 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_get_contacts` | Get all contacts |
-| `waha_get_contact` | Get info about a specific contact |
-| `waha_check_number_exists` | Check if a phone number is on WhatsApp |
-| `waha_block_contact` | Block or unblock a contact |
-| `waha_get_profile_picture` | Get contact's profile picture URL |
+| `waha_get_contact` | Get info about a contact |
+| `waha_check_number_exists` | Check if number is on WhatsApp |
+| `waha_block_contact` | Block/unblock a contact |
+| `waha_get_profile_picture` | Get profile picture URL |
 
-### Groups
+</details>
+
+<details>
+<summary><b>Groups (13 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_create_group` | Create a new group |
 | `waha_list_groups` | List all groups |
 | `waha_get_group` | Get detailed group info |
 | `waha_get_group_participants` | List group participants |
-| `waha_add_group_participants` | Add participants to a group |
-| `waha_remove_group_participants` | Remove participants from a group |
+| `waha_add_group_participants` | Add participants |
+| `waha_remove_group_participants` | Remove participants |
 | `waha_promote_group_participant` | Promote to admin |
 | `waha_demote_group_participant` | Demote from admin |
 | `waha_update_group_subject` | Update group name |
 | `waha_update_group_description` | Update group description |
 | `waha_update_group_picture` | Set group profile picture |
 | `waha_leave_group` | Leave a group |
-| `waha_get_group_invite_code` | Get group invite link |
-| `waha_revoke_group_invite` | Revoke and regenerate invite link |
+| `waha_get_group_invite_code` | Get invite link |
+| `waha_revoke_group_invite` | Revoke & regenerate link |
 
-### Presence & Status
+</details>
+
+<details>
+<summary><b>Presence & Status (5 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_set_presence` | Set online/offline status |
-| `waha_get_presence` | Get a contact's presence |
+| `waha_get_presence` | Get contact's presence |
 | `waha_start_typing` | Show typing indicator |
 | `waha_stop_typing` | Stop typing indicator |
 | `waha_send_status` | Post a text status/story |
 
-### Labels
+</details>
+
+<details>
+<summary><b>Labels (5 tools)</b></summary>
+
 | Tool | Description |
 |------|-------------|
 | `waha_get_labels` | Get all labels |
 | `waha_create_label` | Create a new label |
 | `waha_delete_label` | Delete a label |
-| `waha_add_label_to_chat` | Add a label to a chat |
-| `waha_remove_label_from_chat` | Remove a label from a chat |
+| `waha_add_label_to_chat` | Add label to chat |
+| `waha_remove_label_from_chat` | Remove label from chat |
 
-## Chat ID Formats
+</details>
 
-- **User:** `1234567890@c.us` (phone number without `+`)
-- **Group:** `1234567890@g.us`
-- **Channel:** `1234567890@newsletter`
-- **Status:** `status@broadcast`
+---
 
-## Development
+## 📚 Chat ID Formats
+
+Understanding WhatsApp ID formats:
+
+| Type | Format | Example |
+|------|--------|---------|
+| **User** | `{phone}@c.us` | `1234567890@c.us` |
+| **Group** | `{id}@g.us` | `1234567890-1234567890@g.us` |
+| **Channel** | `{id}@newsletter` | `1234567890@newsletter` |
+| **Status** | `status@broadcast` | `status@broadcast` |
+
+> **Note:** Phone numbers should exclude the `+` prefix.
+
+---
+
+## 🎯 Quick Examples
+
+### Send a Text Message
 
 ```bash
-# Watch mode (recompile on changes)
-npm run dev
+mcporter call 'waha-mcp.waha_send_text(
+  chatId: "1234567890@c.us",
+  text: "Hello from WAHA MCP!"
+)'
+```
 
-# Run tests
+### Send an Image from URL
+
+```bash
+mcporter call 'waha-mcp.waha_send_image(
+  chatId: "1234567890@c.us",
+  imageUrl: "https://example.com/photo.jpg",
+  caption: "Check this out!"
+)'
+```
+
+### Create a Group & Add Participants
+
+```bash
+# Create group
+mcporter call 'waha-mcp.waha_create_group(
+  name: "Team Chat",
+  participants: ["1111111111@c.us", "2222222222@c.us"]
+)'
+
+# Add more participants
+mcporter call 'waha-mcp.waha_add_group_participants(
+  chatId: "{group_id}@g.us",
+  participants: ["3333333333@c.us"]
+)'
+```
+
+### List All Chats
+
+```bash
+mcporter call 'waha-mcp.waha_list_chats()'
+```
+
+---
+
+## 🧪 Development
+
+### Run in Watch Mode
+
+```bash
+npm run dev  # Recompiles on file changes
+```
+
+### Run Tests
+
+```bash
 npm test
 ```
 
-## License
+### Build for Production
 
-MIT
+```bash
+npm run build
+```
+
+---
+
+## 📖 Documentation
+
+For detailed documentation, see the [docs](./docs/README.md) folder:
+
+- [Session Management](./docs/01-sessions.md)
+- [Messaging Guide](./docs/02-messaging.md)
+- [Group Management](./docs/03-groups.md)
+- [Media Handling](./docs/04-media.md)
+- [Troubleshooting](./docs/05-troubleshooting.md)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [WAHA (WhatsApp HTTP API)](https://waha.devlike.pro/) - The backbone of this integration
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Enabling AI-native tool integration
+- [Anthropic](https://www.anthropic.com/) - For Claude Desktop and MCP SDK
+
+---
+
+<div align="center">
+  
+  **Built with ❤️ for the MCP community**
+  
+  [⭐ Star this repo](https://github.com/dudu1111685/waha-mcp) • [🐛 Report Bug](https://github.com/dudu1111685/waha-mcp/issues) • [💡 Request Feature](https://github.com/dudu1111685/waha-mcp/issues)
+  
+</div>
