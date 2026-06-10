@@ -3,6 +3,7 @@
 export interface WAHAConfig {
   baseUrl: string;
   apiKey: string;
+  timeoutMs?: number;
 }
 
 // Session types
@@ -64,7 +65,10 @@ export interface WAMessage {
   };
   ack: number;
   ackName: string;
-  replyTo?: string;
+  /** Quoted-reply info. WAHA returns an object (engines also attach a raw `_data` blob — never project it). */
+  replyTo?: { id: string; participant?: string; body?: string };
+  /** Group messages: the actual sender id (msg.from is the group id) */
+  participant?: string;
 }
 
 export interface SendResult {

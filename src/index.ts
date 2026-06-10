@@ -12,6 +12,9 @@ import { registerGroupTools } from './tools/groups.js';
 import { registerPresenceTools } from './tools/presence.js';
 import { registerLabelTools } from './tools/labels.js';
 import { registerInteractiveTools } from './tools/interactive.js';
+import { registerStatusTools } from './tools/status.js';
+import { registerMediaTools } from './tools/media.js';
+import { registerCompoundTools } from './tools/compound.js';
 
 const WAHA_URL = process.env.WAHA_URL || 'http://localhost:3001';
 const WAHA_API_KEY = process.env.WAHA_API_KEY;
@@ -22,9 +25,12 @@ if (!WAHA_API_KEY) {
   process.exit(1);
 }
 
+const timeoutMs = Number(process.env.WAHA_TIMEOUT_MS) || undefined;
+
 const client = new WAHAClient({
   baseUrl: WAHA_URL,
   apiKey: WAHA_API_KEY,
+  timeoutMs,
 });
 
 const server = new McpServer(
@@ -48,6 +54,9 @@ registerGroupTools(server, client);
 registerPresenceTools(server, client);
 registerLabelTools(server, client);
 registerInteractiveTools(server, client);
+registerStatusTools(server, client);
+registerMediaTools(server, client);
+registerCompoundTools(server, client);
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
