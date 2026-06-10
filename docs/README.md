@@ -2,6 +2,13 @@
 
 Welcome to the comprehensive documentation for WAHA MCP Server!
 
+> **Start here:** [**WAHA Server Setup**](./waha-server-setup.md) — WAHA Plus +
+> GOWS engine, full-history sync, and anti-ban config. The single most important
+> page; everything else assumes the server is set up correctly.
+>
+> Then wire up your agent: [AGENT_SETUP.md](../AGENT_SETUP.md) (Claude Code /
+> generic MCP) or [HERMES_SETUP.md](../HERMES_SETUP.md) (hermes-agent).
+
 ## 📚 Table of Contents
 
 ### Getting Started

@@ -29,3 +29,11 @@ Thumbs.db
 # Test
 coverage/
 .nyc_output/
+
+# Large local artifacts (e.g. docker image exports)
+*.tar.gz
+*.tar
+waha-plus.tar.gz
+
+# skill-creator eval workspace (dev scaffolding)
+skills/*-workspace/

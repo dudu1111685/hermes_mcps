@@ -10,7 +10,7 @@
   [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
   
-  [Documentation](./docs/README.md) • [Installation](#installation) • [Configuration](#configuration) • [🤖 Claude Code Setup](./CLAUDE_CODE_SETUP.md) • [Tools Reference](#tools-reference)
+  [Documentation](./docs/README.md) • [Installation](#installation) • [Configuration](#configuration) • [🤖 Agent Setup](./AGENT_SETUP.md) • [🪽 Hermes Setup](./HERMES_SETUP.md) • [Tools Reference](#tools-reference)
 </div>
 
 ---
@@ -22,11 +22,13 @@ WAHA MCP Server bridges the powerful [WAHA (WhatsApp HTTP API)](https://waha.dev
 ### ✨ Key Features
 
 - 📱 **Complete WhatsApp Control** - Send/receive messages, manage chats, create groups
-- 🎯 **63 Tools** - Comprehensive API coverage for sessions, messaging, contacts, groups, and interactive workflows
-- 🔄 **Smart Media Handling** - Auto-conversion for voice/video, support for URLs & local files
-- 🤖 **AI-Native** - Built specifically for LLM integration via MCP
-- 🔒 **Secure** - Environment-based API key management
-- ⚡ **Fast & Reliable** - TypeScript-powered with robust error handling
+- 🎯 **84 Tools** - Comprehensive API coverage for sessions, messaging, contacts, groups, status, labels, and interactive workflows
+- 🧠 **Agent-Grade Compound Tools** - `waha_inbox` (triage), `waha_find_chat` (name → chatId), `waha_reply` (human-like answering), `waha_get_chat_context` (LLM-ready conversation rendering)
+- 🎙️ **Voice Transcription** - Incoming voice notes transcribed automatically via [Soniox](https://soniox.com) (Hebrew + 60 languages, OGG/Opus native) — verified end-to-end on real speech
+- 🔄 **Smart Media Handling** - Auto-conversion for voice/video, URLs & local files, inline image viewing for vision models
+- 🤖 **AI-Native** - Token-efficient compact responses, MCP tool annotations (read-only/destructive hints)
+- 🔒 **Secure** - Environment-based API key management, optional local-file sandbox (`WAHA_MCP_FILES_DIR`)
+- ⚡ **Fast & Reliable** - TypeScript-powered, request timeouts, typed errors, vitest suite
 
 ---
 
@@ -35,8 +37,17 @@ WAHA MCP Server bridges the powerful [WAHA (WhatsApp HTTP API)](https://waha.dev
 Before you begin, ensure you have:
 
 - **Node.js 18+** - [Download here](https://nodejs.org/)
-- **A running WAHA instance** - [Setup guide](https://waha.devlike.pro/docs/how-to/install/)
-- **WAHA API Key** - Generated from your WAHA dashboard
+- **WAHA Plus** on the **GOWS** engine, running in Docker - required for media
+  (the basis of transcription & image viewing) and for connection stability.
+  **[Full server setup → `docs/waha-server-setup.md`](./docs/waha-server-setup.md)**
+- **WAHA API Key** - any strong secret you set via `WHATSAPP_API_KEY`
+- *(optional)* **Soniox API key** - enables voice-note transcription
+  ([soniox.com](https://soniox.com); Hebrew + 60 languages)
+
+> **Why Plus + GOWS?** Core can't download incoming media (no voice
+> transcription, no image viewing). NOWEB/WEBJS get the device force-unlinked
+> or break on WhatsApp updates. The setup guide explains the tradeoffs and the
+> anti-ban configuration in detail.
 
 ---
 
@@ -57,7 +68,10 @@ Create a `.env` file or export variables:
 
 ```bash
 export WAHA_API_KEY="your-api-key-here"
-export WAHA_URL="http://localhost:3001"  # Optional, defaults to localhost:3001
+export WAHA_URL="http://localhost:3001"      # Optional, defaults to localhost:3001
+export SONIOX_API_KEY="your-soniox-key"      # Optional — enables voice note transcription
+export WAHA_TIMEOUT_MS="30000"               # Optional — WAHA request timeout
+export WAHA_MCP_FILES_DIR="/tmp/waha-mcp"    # Optional — restrict local-file reads to this dir
 ```
 
 ---
@@ -104,13 +118,13 @@ Add to your Cline MCP settings (`~/.vscode/mcp.json` or workspace settings):
 }
 ```
 
-### Claude Code (Autonomous Development)
+### AI Agents (hermes-agent, Claude Code, and more)
 
-**🤖 Enable truly autonomous AI development:**
+**🤖 Enable truly autonomous AI workflows:**
 
-Instead of Claude stopping when it needs user input, it can ask questions via WhatsApp and continue working!
+Instead of the agent stopping when it needs user input, it can ask questions via WhatsApp and continue working!
 
-**🚀 Complete Setup Guide:** **[`CLAUDE_CODE_SETUP.md`](./CLAUDE_CODE_SETUP.md)**
+**🚀 Setup guides:** **[`AGENT_SETUP.md`](./AGENT_SETUP.md)** (Claude Code / generic MCP) • **[`HERMES_SETUP.md`](./HERMES_SETUP.md)** (hermes-agent)
 
 **Quick config example:**
 ```json
@@ -125,7 +139,7 @@ Instead of Claude stopping when it needs user input, it can ask questions via Wh
       }
     }
   },
-  "globalInstructions": "When you need user input during development, use ask_user_via_whatsapp tool. Never stop and wait for manual console input."
+  "globalInstructions": "When you need user input during development, send the question with waha_ask_user and poll waha_check_replies every ~30-60s until answered. Never stop and wait for manual console input."
 }
 ```
 
@@ -136,8 +150,9 @@ Instead of Claude stopping when it needs user input, it can ask questions via Wh
 4. Zero downtime! ⚡
 
 **📖 See also:**
-- [`CLAUDE_CODE_SETUP.md`](./CLAUDE_CODE_SETUP.md) - Complete setup guide
-- [`CLAUDE_CODE_INSTRUCTIONS.md`](./CLAUDE_CODE_INSTRUCTIONS.md) - Usage examples for AI assistants
+- [`AGENT_SETUP.md`](./AGENT_SETUP.md) - Setup + the ask/check-replies pattern for any MCP agent
+- [`HERMES_SETUP.md`](./HERMES_SETUP.md) - hermes-agent: config.yaml, tool selection, autonomy patterns
+- [`skills/whatsapp-assistant/`](./skills/whatsapp-assistant/SKILL.md) - Behavioral playbook skill (agentskills.io format)
 
 ### Other MCP Clients
 
@@ -154,8 +169,31 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 
 ### 📂 Categories
 
+<details open>
+<summary><b>🧠 Agent-Grade Compound Tools (4 tools) — start here</b></summary>
+
+| Tool | Description |
+|------|-------------|
+| `waha_inbox` | **Triage first.** Chats sorted by recent activity with last-message previews — "what needs attention?" |
+| `waha_find_chat` | Resolve a person/group **name** to a chatId (fuzzy, ranked). Use before any send/read when you only have a name |
+| `waha_get_chat_context` | **Primary reading tool.** LLM-ready conversation rendering: names resolved, voice notes transcribed inline (Soniox), media summarized |
+| `waha_reply` | Human-like answering: mark seen → typing indicator → proportional delay → send (anti-ban sequence in one call) |
+
+</details>
+
 <details>
-<summary><b>Session Management (8 tools)</b></summary>
+<summary><b>🎙️ Media & Transcription (3 tools)</b></summary>
+
+| Tool | Description |
+|------|-------------|
+| `waha_transcribe_message` | Transcribe a specific voice message via Soniox (`SONIOX_API_KEY` required; Hebrew + 60 languages) |
+| `waha_get_media` | Download incoming media — images returned inline so vision models can see them, larger files saved to a temp path |
+| `waha_get_message` | Fetch a single message (quoted-message resolution, fresh media URLs) |
+
+</details>
+
+<details>
+<summary><b>Session Management (9 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
@@ -167,6 +205,7 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 | `waha_restart_session` | Restart a session |
 | `waha_delete_session` | Delete a session permanently |
 | `waha_logout_session` | Disconnect WhatsApp account from session |
+| `waha_screenshot` | Visual debug — screenshot of the WhatsApp Web screen (returned as an image) |
 
 </details>
 
@@ -182,11 +221,11 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 </details>
 
 <details>
-<summary><b>Messaging (14 tools)</b></summary>
+<summary><b>Messaging (17 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
-| `waha_send_text` | Send a text message |
+| `waha_send_text` | Send a text message (mentions, reply-to, link preview) |
 | `waha_send_image` | Send an image (local file or URL) |
 | `waha_send_video` | Send a video with auto-conversion |
 | `waha_send_voice` | Send a voice message with auto-conversion |
@@ -195,12 +234,13 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 | `waha_send_contact` | Send a contact vCard |
 | `waha_send_poll` | Create and send a poll |
 | `waha_react_to_message` | React with emoji 👍❤️😂 |
-| `waha_forward_message` | Forward a message |
-| `waha_get_messages` | Get messages with pagination |
+| `waha_forward_message` | Forward a message to another chat |
+| `waha_get_messages` | Get messages with pagination + timestamp/ack filters |
 | `waha_delete_message` | Delete a message |
 | `waha_edit_message` | Edit a sent message |
 | `waha_mark_as_read` | Mark messages as read |
 | `waha_star_message` | Star/unstar a message |
+| `waha_pin_message` / `waha_unpin_message` | Pin a message for 24h/7d/30d |
 
 **📤 Media Upload Features:**
 - ✅ Local files & URLs supported
@@ -212,40 +252,43 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 </details>
 
 <details>
-<summary><b>Chat Management (7 tools)</b></summary>
+<summary><b>Chat Management (6 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
-| `waha_list_chats` | List all chats |
-| `waha_get_chat` | Get detailed chat info |
+| `waha_list_chats` | List all chats (sortable, paginated) |
+| `waha_get_chat` | Get chat info (via overview lookup) |
 | `waha_archive_chat` | Archive/unarchive a chat |
-| `waha_pin_chat` | Pin/unpin a chat |
-| `waha_mute_chat` | Mute/unmute a chat |
+| `waha_mark_unread` | Mark a chat unread for human follow-up |
 | `waha_delete_chat` | Delete a chat |
-| `waha_clear_chat` | Clear all messages |
+| `waha_clear_chat` | Clear all messages in a chat |
+
+> Note: WAHA has no chat-level pin/mute endpoints, so no pin/mute chat tools are exposed (message pinning is available via `waha_pin_message`).
 
 </details>
 
 <details>
-<summary><b>Contacts (5 tools)</b></summary>
+<summary><b>Contacts (7 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
-| `waha_get_contacts` | Get all contacts |
+| `waha_get_contacts` | Get contacts (paginated, sortable) |
 | `waha_get_contact` | Get info about a contact |
-| `waha_check_number_exists` | Check if number is on WhatsApp |
+| `waha_get_contact_about` | Get a contact's "about" status text |
+| `waha_check_number_exists` | Check if number is on WhatsApp (verify before first-time sends!) |
+| `waha_update_contact` | Save/edit a contact's name |
 | `waha_block_contact` | Block/unblock a contact |
 | `waha_get_profile_picture` | Get profile picture URL |
 
 </details>
 
 <details>
-<summary><b>Groups (13 tools)</b></summary>
+<summary><b>Groups (17 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
 | `waha_create_group` | Create a new group |
-| `waha_list_groups` | List all groups |
+| `waha_list_groups` | List all groups (lean payload by default) |
 | `waha_get_group` | Get detailed group info |
 | `waha_get_group_participants` | List group participants |
 | `waha_add_group_participants` | Add participants |
@@ -254,7 +297,10 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 | `waha_demote_group_participant` | Demote from admin |
 | `waha_update_group_subject` | Update group name |
 | `waha_update_group_description` | Update group description |
-| `waha_update_group_picture` | Set group profile picture |
+| `waha_update_group_picture` | Set group picture (local file or URL) |
+| `waha_join_group` | Join a group via invite link/code |
+| `waha_preview_group_invite` | Preview a group before joining |
+| `waha_group_security_settings` | Admin-only messages/info settings |
 | `waha_leave_group` | Leave a group |
 | `waha_get_group_invite_code` | Get invite link |
 | `waha_revoke_group_invite` | Revoke & regenerate link |
@@ -262,63 +308,81 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 </details>
 
 <details>
-<summary><b>Presence & Status (5 tools)</b></summary>
+<summary><b>Presence (6 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
 | `waha_set_presence` | Set online/offline status |
-| `waha_get_presence` | Get contact's presence |
+| `waha_get_presence` | Get contact's presence (last seen) |
+| `waha_subscribe_presence` | Subscribe to a contact's presence updates |
 | `waha_start_typing` | Show typing indicator |
 | `waha_stop_typing` | Stop typing indicator |
-| `waha_send_status` | Post a text status/story |
+| `waha_mark_as_read` | Send read receipts (see Messaging) |
 
 </details>
 
 <details>
-<summary><b>Labels (5 tools)</b></summary>
+<summary><b>Status / Stories (4 tools, WAHA Plus)</b></summary>
+
+| Tool | Description |
+|------|-------------|
+| `waha_send_text_status` | Post a text status (background color, font) |
+| `waha_send_image_status` | Post an image status (local file or URL) |
+| `waha_send_voice_status` | Post a voice status (auto-converted to Opus) |
+| `waha_delete_status` | Delete a posted status |
+
+</details>
+
+<details>
+<summary><b>Labels (7 tools, WhatsApp Business)</b></summary>
 
 | Tool | Description |
 |------|-------------|
 | `waha_get_labels` | Get all labels |
 | `waha_create_label` | Create a new label |
+| `waha_update_label` | Rename/recolor a label |
 | `waha_delete_label` | Delete a label |
-| `waha_add_label_to_chat` | Add label to chat |
-| `waha_remove_label_from_chat` | Remove label from chat |
+| `waha_get_chat_labels` | Get labels of a chat |
+| `waha_set_chat_labels` | Replace a chat's label set |
+| `waha_get_chats_by_label` | Find all chats with a label (triage loop) |
 
 </details>
 
 <details>
-<summary><b>🆕 Interactive Workflows (1 tool)</b></summary>
+<summary><b>🆕 Interactive Workflows (2 tools)</b></summary>
 
 | Tool | Description |
 |------|-------------|
-| `ask_user_via_whatsapp` | **🚀 NEW!** Send a question and WAIT for user reply (blocking operation). Perfect for Claude Code workflows that need user input mid-execution. |
+| `waha_ask_user` | Send a question via WhatsApp, return immediately with tracking info (non-blocking) |
+| `waha_check_replies` | Check for replies since the question was sent — single quick poll, the agent manages its own waiting loop |
 
 **Use Case Example:**
 ```typescript
 // Claude Code is building a feature and needs clarification
-const reply = await ask_user_via_whatsapp({
+const q = await waha_ask_user({
   question: "Should I use REST or GraphQL for the API?",
-  chatId: "1234567890@c.us",
-  timeoutMinutes: 30
+  chatId: "1234567890@c.us"
 });
-// User replies from phone: "Use GraphQL"
-// Claude Code continues with GraphQL implementation
+// ...continue other work, then periodically:
+const replies = await waha_check_replies({
+  chatId: "1234567890@c.us",
+  sinceTimestamp: q.sinceTimestamp,
+  questionMessageId: q.questionMessageId
+});
+// User replied from phone: "Use GraphQL" → continue with GraphQL
 ```
 
-**How it works:**
-1. Sends your question via WhatsApp
-2. Polls for new messages from the user
-3. Returns the reply text when received
-4. Includes timeout handling (default: 60 minutes)
-
-**Perfect for:**
-- 🤖 Claude Code asking questions mid-workflow
-- 💡 Getting user input while you're away from the computer
-- 🔄 Building truly interactive AI automations
-- 📱 Answering from your phone while AI continues working
+**Why non-blocking?** The old blocking design waited up to 60 minutes inside one tool call — every MCP client times out long before that. The new pair lets the agent keep working and poll on its own schedule. Quoted replies to the question are detected reliably (including in groups via the `fromUser` filter).
 
 </details>
+
+---
+
+## 🔒 Security Note: Local File Access
+
+Send tools that accept a local file path (`waha_send_image`, `waha_send_file`, `waha_send_voice`, status tools, etc.) can read any file the server process can access. Since chat content (including voice transcripts) from other people reaches the agent, a prompt-injected instruction could try to exfiltrate local files (e.g. SSH keys) by "sending" them.
+
+To restrict reads to a single directory, set the `WAHA_MCP_FILES_DIR` environment variable (e.g. to `/tmp/waha-mcp`, where `waha_get_media` saves downloads). Paths outside it are then rejected. When unset, any local path is allowed.
 
 ---
 

@@ -1,0 +1,33 @@
+{
+  "skill_name": "whatsapp-assistant",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "read-and-reply-by-name",
+      "prompt": "Read what David wrote to me on WhatsApp and send him an appropriate reply. (You are connected to the owner's WhatsApp via the waha MCP tools listed in tool-catalog.md. You cannot execute the tools in this exercise — instead, write the EXACT ordered tool-call plan you would execute: tool name + parameters for each step, plus a one-line rationale per step.)",
+      "expected_output": "Plan: waha_find_chat(query='David') to resolve the chat id, then waha_get_chat_context on the resolved id (small limit), then waha_reply with the drafted text and replyToMessageId. Should NOT use waha_get_messages, waha_send_text, or ask the user for a chat ID.",
+      "files": ["tool-catalog.md"]
+    },
+    {
+      "id": 1,
+      "eval_name": "voice-note-transcription",
+      "prompt": "My mom sent me a WhatsApp voice message. What did she say? Then send her a reply that I'm on my way. (You are connected to the owner's WhatsApp via the waha MCP tools listed in tool-catalog.md. You cannot execute the tools in this exercise — instead, write the EXACT ordered tool-call plan you would execute: tool name + parameters for each step, plus a one-line rationale per step.)",
+      "expected_output": "Plan resolves mom's chat via waha_find_chat, reads with waha_get_chat_context (which transcribes voice inline) or waha_transcribe_message for the specific message; never guesses voice content; replies via waha_reply.",
+      "files": ["tool-catalog.md"]
+    },
+    {
+      "id": 2,
+      "eval_name": "cold-send-to-raw-number",
+      "prompt": "Send a WhatsApp message to 052-123-4567 saying: 'Hi, does 10am tomorrow work for you?' I've never messaged this number before. (You are connected to the owner's WhatsApp via the waha MCP tools listed in tool-catalog.md. You cannot execute the tools in this exercise — instead, write the EXACT ordered tool-call plan you would execute: tool name + parameters for each step, plus a one-line rationale per step.)",
+      "expected_output": "Plan verifies the number with waha_check_number_exists BEFORE any send (anti-ban), formats the chat id from the verification result (international format, @c.us), and only then sends. Does not send blind to an unverified number.",
+      "files": ["tool-catalog.md"]
+    },
+    {
+      "id": 3,
+      "eval_name": "inbox-triage",
+      "prompt": "Go over my WhatsApp and tell me what needs my attention. Handle anything trivial yourself. (You are connected to the owner's WhatsApp via the waha MCP tools listed in tool-catalog.md. You cannot execute the tools in this exercise — instead, write the EXACT ordered tool-call plan you would execute: tool name + parameters for each step, plus a one-line rationale per step. Where a step depends on unknown runtime data, describe the branching rule.)",
+      "expected_output": "Plan starts with waha_inbox (not list_chats/get_contacts), reads candidate chats with waha_get_chat_context at small limit, applies a confirmation gate (only pre-approved trivial replies sent autonomously via waha_reply), flags owner-needed chats with waha_mark_unread or labels, and ends with ONE summary message to the owner rather than many.",
+      "files": ["tool-catalog.md"]
+    }
+  ]
+}
