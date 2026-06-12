@@ -8,7 +8,7 @@ metadata:
     category: messaging
 ---
 
-# WhatsApp Assistant (waha-mcp)
+# WhatsApp Assistant (hermes_mcps)
 
 You control the owner's **personal WhatsApp account** via the `waha` MCP server.
 Everything you send appears as if the owner sent it, and WhatsApp aggressively

@@ -1,9 +1,9 @@
 <div align="center">
   <img src=".github/logo.png" alt="WAHA MCP Logo" width="200"/>
   
-  # WAHA MCP Server
+  # Hermes MCPs
   
-  **WhatsApp HTTP API integration for Claude Desktop & MCP-compatible clients**
+  **Personal WhatsApp + Telegram MCP servers for AI agents (hermes-agent, Claude, and any MCP client)**
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
@@ -15,9 +15,14 @@
 
 ---
 
-## 🚀 What is WAHA MCP?
+## 🚀 What is Hermes MCPs?
 
-WAHA MCP Server bridges the powerful [WAHA (WhatsApp HTTP API)](https://waha.devlike.pro/) with AI assistants like Claude Desktop, enabling seamless WhatsApp automation through the Model Context Protocol (MCP).
+Two sibling MCP servers that give an AI agent control of the owner's personal messaging accounts, built on one shared TypeScript core:
+
+- **WhatsApp** (`dist/index.js`, 84 `waha_*` tools) — via [WAHA (WhatsApp HTTP API)](https://waha.devlike.pro/) on the GOWS engine
+- **Telegram** (`dist/telegram/index.js`, 15 `tg_*` tools) — directly over MTProto via [gramjs](https://github.com/gram-js/gramjs), no bot API
+
+Both share the same agent-grade design: inbox triage, LLM-ready conversation rendering, inline voice-note transcription (Soniox), compact token-efficient output, and self-explanatory errors.
 
 ### ✨ Key Features
 
@@ -57,7 +62,7 @@ Before you begin, ensure you have:
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/dudu1111685/waha-mcp.git
+git clone https://github.com/dudu1111685/hermes_mcps.git
 cd waha-mcp
 npm install
 npm run build
@@ -164,7 +169,8 @@ Instead of the agent stopping when it needs user input, it can ask questions via
 **📖 See also:**
 - [`AGENT_SETUP.md`](./AGENT_SETUP.md) - Setup + the ask/check-replies pattern for any MCP agent
 - [`HERMES_SETUP.md`](./HERMES_SETUP.md) - hermes-agent: config.yaml, tool selection, autonomy patterns
-- [`skills/whatsapp-assistant/`](./skills/whatsapp-assistant/SKILL.md) - Behavioral playbook skill (agentskills.io format)
+- [`skills/whatsapp-assistant/`](./skills/whatsapp-assistant/SKILL.md) - WhatsApp behavioral playbook skill (agentskills.io format)
+- [`skills/telegram-assistant/`](./skills/telegram-assistant/SKILL.md) - Telegram behavioral playbook skill
 
 ### Other MCP Clients
 
@@ -578,6 +584,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
   
   **Built with ❤️ for the MCP community**
   
-  [⭐ Star this repo](https://github.com/dudu1111685/waha-mcp) • [🐛 Report Bug](https://github.com/dudu1111685/waha-mcp/issues) • [💡 Request Feature](https://github.com/dudu1111685/waha-mcp/issues)
+  [⭐ Star this repo](https://github.com/dudu1111685/hermes_mcps) • [🐛 Report Bug](https://github.com/dudu1111685/hermes_mcps/issues) • [💡 Request Feature](https://github.com/dudu1111685/hermes_mcps/issues)
   
 </div>

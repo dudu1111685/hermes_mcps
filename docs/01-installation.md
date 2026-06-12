@@ -55,7 +55,7 @@ Use a hosted WAHA service like:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/dudu1111685/waha-mcp.git
+git clone https://github.com/dudu1111685/hermes_mcps.git
 cd waha-mcp
 ```
 

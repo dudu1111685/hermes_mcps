@@ -61,8 +61,8 @@ Welcome to the comprehensive documentation for WAHA MCP Server!
 
 ## 💡 Need Help?
 
-- 🐛 Found a bug? [Report it here](https://github.com/dudu1111685/waha-mcp/issues)
-- 💬 Have questions? [Start a discussion](https://github.com/dudu1111685/waha-mcp/discussions)
+- 🐛 Found a bug? [Report it here](https://github.com/dudu1111685/hermes_mcps/issues)
+- 💬 Have questions? [Start a discussion](https://github.com/dudu1111685/hermes_mcps/discussions)
 - 📧 Email: [support@example.com](mailto:support@example.com)
 
 ---

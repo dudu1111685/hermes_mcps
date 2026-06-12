@@ -1,7 +1,7 @@
 {
-  "name": "waha-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for WAHA (WhatsApp HTTP API)",
+  "name": "hermes-mcps",
+  "version": "1.1.0",
+  "description": "Personal WhatsApp (WAHA) + Telegram (MTProto) MCP servers for AI agents",
   "main": "dist/index.js",
   "bin": {
     "waha-mcp": "dist/index.js",
@@ -21,6 +21,9 @@
     "mcp",
     "whatsapp",
     "waha",
+    "telegram",
+    "mtproto",
+    "hermes",
     "claude"
   ],
   "license": "MIT",

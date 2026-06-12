@@ -1,6 +1,6 @@
 # Hermes Agent Setup
 
-Connect waha-mcp to [hermes-agent](https://github.com/NousResearch/hermes-agent) so Hermes can read, answer, and act on your personal WhatsApp.
+Connect hermes_mcps to [hermes-agent](https://github.com/NousResearch/hermes-agent) so Hermes can read, answer, and act on your personal WhatsApp **and Telegram** (Telegram: see section 6).
 
 ## Architecture: two different WhatsApp roles
 
@@ -83,6 +83,7 @@ workflow) ships in this repo as a standard [agentskills.io](https://agentskills.
 ```bash
 mkdir -p ~/.hermes/skills/messaging
 cp -r /home/shlomo/waha-mcp/skills/whatsapp-assistant ~/.hermes/skills/messaging/
+cp -r /home/shlomo/waha-mcp/skills/telegram-assistant ~/.hermes/skills/messaging/
 ```
 
 Or point Hermes at the repo copy via `config.yaml` so it stays in sync with git:
@@ -145,6 +146,14 @@ One-time setup:
 
 Core loop tools: `tg_inbox` → `tg_get_chat_context` → `tg_send_text`
 (+ `tg_find_chat`, `tg_transcribe_message`, `tg_get_media`, `tg_react`).
+
+If login codes never arrive (a known Telegram quirk when the account is
+logged in elsewhere), use the QR flow instead: `npm run telegram:login:qr` —
+scan from the app via Settings → Devices → Link Desktop Device.
+
+The behavioral playbook for Telegram ships as a skill too:
+[`skills/telegram-assistant/`](./skills/telegram-assistant/SKILL.md)
+(installed by the `cp -r` commands in section 4).
 
 ## 7. Autonomy patterns
 

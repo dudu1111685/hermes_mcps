@@ -6,7 +6,7 @@ Thank you for your interest in contributing to WAHA MCP! 🎉
 
 ### Reporting Bugs
 
-1. Check [existing issues](https://github.com/dudu1111685/waha-mcp/issues) first
+1. Check [existing issues](https://github.com/dudu1111685/hermes_mcps/issues) first
 2. Use the bug report template
 3. Include:
    - Steps to reproduce
@@ -16,7 +16,7 @@ Thank you for your interest in contributing to WAHA MCP! 🎉
 
 ### Suggesting Features
 
-1. Open a [feature request](https://github.com/dudu1111685/waha-mcp/issues/new)
+1. Open a [feature request](https://github.com/dudu1111685/hermes_mcps/issues/new)
 2. Describe the use case
 3. Explain why it would be useful
 4. Provide examples if possible
@@ -25,7 +25,7 @@ Thank you for your interest in contributing to WAHA MCP! 🎉
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/dudu1111685/waha-mcp.git
+   git clone https://github.com/dudu1111685/hermes_mcps.git
    cd waha-mcp
    ```
 
@@ -110,7 +110,7 @@ waha-mcp/
 
 ## Questions?
 
-- 💬 [Start a discussion](https://github.com/dudu1111685/waha-mcp/discussions)
+- 💬 [Start a discussion](https://github.com/dudu1111685/hermes_mcps/discussions)
 - 📧 Email: support@example.com
 
 ## License
