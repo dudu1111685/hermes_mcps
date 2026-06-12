@@ -34,7 +34,7 @@ Edit `~/.hermes/config.yaml`:
 mcp_servers:
   waha:
     command: "node"
-    args: ["/home/shlomo/waha-mcp/dist/index.js"]
+    args: ["/home/shlomo/hermes_mcps/dist/index.js"]
     env:
       WAHA_API_KEY: "${WAHA_API_KEY}"
       WAHA_URL: "http://localhost:3001"
@@ -82,8 +82,8 @@ workflow) ships in this repo as a standard [agentskills.io](https://agentskills.
 
 ```bash
 mkdir -p ~/.hermes/skills/messaging
-cp -r /home/shlomo/waha-mcp/skills/whatsapp-assistant ~/.hermes/skills/messaging/
-cp -r /home/shlomo/waha-mcp/skills/telegram-assistant ~/.hermes/skills/messaging/
+cp -r /home/shlomo/hermes_mcps/skills/whatsapp-assistant ~/.hermes/skills/messaging/
+cp -r /home/shlomo/hermes_mcps/skills/telegram-assistant ~/.hermes/skills/messaging/
 ```
 
 Or point Hermes at the repo copy via `config.yaml` so it stays in sync with git:
@@ -91,7 +91,7 @@ Or point Hermes at the repo copy via `config.yaml` so it stays in sync with git:
 ```yaml
 skills:
   external_dirs:
-    - /home/shlomo/waha-mcp/skills
+    - /home/shlomo/hermes_mcps/skills
 ```
 
 ## 5. Verify
@@ -120,7 +120,7 @@ One-time setup:
 2. Sign in once and generate a session string:
 
    ```bash
-   cd /home/shlomo/waha-mcp
+   cd /home/shlomo/hermes_mcps
    npm run telegram:login
    ```
 
@@ -133,7 +133,7 @@ One-time setup:
    mcp_servers:
      telegram:
        command: "node"
-       args: ["/home/shlomo/waha-mcp/dist/telegram/index.js"]
+       args: ["/home/shlomo/hermes_mcps/dist/telegram/index.js"]
        env:
          TELEGRAM_API_ID: "${TELEGRAM_API_ID}"
          TELEGRAM_API_HASH: "${TELEGRAM_API_HASH}"
