@@ -12,6 +12,7 @@
     "start": "node dist/index.js",
     "start:telegram": "node dist/telegram/index.js",
     "telegram:login": "npm run build && node --env-file-if-exists=.env dist/telegram/login.js",
+    "telegram:login:qr": "npm run build && node --env-file-if-exists=.env dist/telegram/login.js --qr",
     "dev": "tsc --watch",
     "test": "node --experimental-vm-modules node_modules/.bin/vitest run",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/vitest"
@@ -26,11 +27,13 @@
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "qrcode": "^1.5.4",
     "telegram": "^2.26.22",
     "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.6",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

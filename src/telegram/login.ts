@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
-// One-time interactive Telegram login: phone → code → (optional) 2FA password.
+// One-time interactive Telegram login. Two modes:
+//   npm run telegram:login     — phone → code → (optional) 2FA password
+//   npm run telegram:login:qr  — QR scan from the Telegram app (no code needed;
+//                                use when login codes don't arrive)
 // Saves the resulting StringSession into .env as TELEGRAM_SESSION.
-// Usage: npm run telegram:login
 
 import { chmod, readFile, writeFile } from 'fs/promises';
 import { createInterface } from 'readline/promises';
 import { fileURLToPath } from 'url';
+import QRCode from 'qrcode';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions/index.js';
 import { Logger, LogLevel } from 'telegram/extensions/Logger.js';
@@ -65,15 +68,41 @@ async function main(): Promise<void> {
     baseLogger: new Logger(LogLevel.ERROR),
   });
 
-  await client.start({
-    phoneNumber: () => rl.question('Phone number (international, e.g. +9725...): '),
-    phoneCode: () => rl.question('Login code (sent to your Telegram app): '),
-    password: () => rl.question('2FA password (empty if none): '),
-    onError: async (err) => {
-      console.error('Login error:', err.message);
-      return false; // keep retrying prompts
-    },
-  });
+  if (process.argv.includes('--qr')) {
+    // QR login: no code delivery involved. Phone app: Settings → Devices →
+    // Link Desktop Device → scan. Token rotates ~every 30s; gramjs re-calls
+    // the callback with a fresh one each time.
+    const QR_PNG = '/tmp/telegram-login-qr.png';
+    await client.connect();
+    await client.signInUserWithQrCode(
+      { apiId, apiHash: apiHash.trim() },
+      {
+        qrCode: async ({ token }) => {
+          const url = `tg://login?token=${token.toString('base64url')}`;
+          await QRCode.toFile(QR_PNG, url, { scale: 8 });
+          const ascii = await QRCode.toString(url, { type: 'terminal', small: true });
+          console.log('\nScan with the Telegram app: Settings → Devices → Link Desktop Device\n');
+          console.log(ascii);
+          console.log(`(QR also saved as image: ${QR_PNG})`);
+        },
+        password: () => rl.question('2FA password: '),
+        onError: async (err) => {
+          console.error('QR login error:', err.message);
+          return false; // keep waiting for a successful scan
+        },
+      },
+    );
+  } else {
+    await client.start({
+      phoneNumber: () => rl.question('Phone number (international, e.g. +9725...): '),
+      phoneCode: () => rl.question('Login code (sent to your Telegram app): '),
+      password: () => rl.question('2FA password (empty if none): '),
+      onError: async (err) => {
+        console.error('Login error:', err.message);
+        return false; // keep retrying prompts
+      },
+    });
+  }
 
   const session = client.session.save() ?? '';
   const me = await client.getMe();
