@@ -34,6 +34,7 @@ Both share the same agent-grade design: inbox triage, LLM-ready conversation ren
 - 🤖 **AI-Native** - Token-efficient compact responses, MCP tool annotations (read-only/destructive hints)
 - 🔒 **Secure** - Environment-based API key management, optional local-file sandbox (`WAHA_MCP_FILES_DIR`)
 - ⚡ **Fast & Reliable** - TypeScript-powered, request timeouts, typed errors, vitest suite
+- 🔔 **Event-Driven Chat Watches** - WAHA webhooks wake Hermes only for watched chats; no minute-level polling. See [`docs/event-driven-chat-watches.md`](./docs/event-driven-chat-watches.md)
 - ✈️ **Telegram too** - a second MCP server (`dist/telegram/index.js`) controls your personal **Telegram** account over MTProto: 15 `tg_*` tools sharing the same core (inbox digest, conversation rendering, voice transcription, send/react/edit, media, search). See [Telegram server](#telegram-server)
 
 ---
@@ -170,6 +171,7 @@ Instead of the agent stopping when it needs user input, it can ask questions via
 - [`AGENT_SETUP.md`](./AGENT_SETUP.md) - Setup + the ask/check-replies pattern for any MCP agent
 - [`HERMES_SETUP.md`](./HERMES_SETUP.md) - hermes-agent: config.yaml, tool selection, autonomy patterns
 - [`skills/whatsapp-assistant/`](./skills/whatsapp-assistant/SKILL.md) - WhatsApp behavioral playbook skill (agentskills.io format)
+- [`skills/event-driven-whatsapp-watches/`](./skills/event-driven-whatsapp-watches/SKILL.md) - bounded WAHA webhook watches that resume the exact opening Hermes session
 - [`skills/telegram-assistant/`](./skills/telegram-assistant/SKILL.md) - Telegram behavioral playbook skill
 
 ### Other MCP Clients
@@ -196,6 +198,10 @@ mcporter call 'waha-mcp.waha_send_text(chatId: "1234567890@c.us", text: "Hello f
 | `waha_find_chat` | Resolve a person/group **name** to a chatId (fuzzy, ranked). Use before any send/read when you only have a name |
 | `waha_get_chat_context` | **Primary reading tool.** LLM-ready conversation rendering: names resolved, voice notes transcribed inline (Soniox), media summarized |
 | `waha_reply` | Human-like answering: mark seen → typing indicator → proportional delay → send (anti-ban sequence in one call) |
+| `waha_watch_chat` | Create a bounded event-driven watch so a new incoming message wakes Hermes once |
+| `waha_list_chat_watches` | List active/closed watches without exposing secrets |
+| `waha_update_chat_watch` | Update objective, sender scope, permissions, expiry or wake target |
+| `waha_close_chat_watch` | Stop waking Hermes when the delegated work is finished |
 
 </details>
 

@@ -157,6 +157,13 @@ The behavioral playbook for Telegram ships as a skill too:
 
 ## 7. Autonomy patterns
 
+- **Event-driven delegated conversations (recommended):** install the companion
+  `dist/watch-listener.js`, enable Hermes' built-in webhook platform, and use
+  `waha_watch_chat` / `waha_close_chat_watch`. WAHA wakes Hermes only when a
+  new incoming message matches the exact watched session/chat/sender. This is
+  the correct replacement for minute-level cron polling. Full setup:
+  [`docs/event-driven-chat-watches.md`](./docs/event-driven-chat-watches.md).
+
 - **Scheduled triage**: Hermes has a built-in `cronjob` tool — e.g. "every 30
   minutes run waha_inbox and message me if anything needs attention". Note:
   cron runs start fresh sessions with no chat context, so the skill +

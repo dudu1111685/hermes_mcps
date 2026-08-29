@@ -27,6 +27,7 @@ export interface SessionConfig {
   webhooks?: WebhookConfig[];
   noweb?: { store?: { enabled?: boolean; fullSync?: boolean } };
   proxy?: { server: string; username?: string; password?: string };
+  metadata?: Record<string, unknown>;
 }
 
 export interface WebhookConfig {

@@ -15,6 +15,7 @@ import { registerInteractiveTools } from './tools/interactive.js';
 import { registerStatusTools } from './tools/status.js';
 import { registerMediaTools } from './tools/media.js';
 import { registerCompoundTools } from './tools/compound.js';
+import { registerWatchTools } from './tools/watches.js';
 
 const WAHA_URL = process.env.WAHA_URL || 'http://localhost:3001';
 const WAHA_API_KEY = process.env.WAHA_API_KEY;
@@ -57,6 +58,7 @@ registerInteractiveTools(server, client);
 registerStatusTools(server, client);
 registerMediaTools(server, client);
 registerCompoundTools(server, client);
+registerWatchTools(server, client);
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
