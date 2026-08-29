@@ -71,7 +71,7 @@ async function ensureListenerWebhook(client: WAHAClient, session: string): Promi
 export function registerWatchTools(server: McpServer, client: WAHAClient, store = new WatchStore()): void {
   defineTool(server, {
     name: 'waha_watch_chat',
-    description: 'Create one event-driven watch for a specific WhatsApp chat. WAHA webhooks wake Hermes only for new incoming messages in that chat, replacing minute-level polling. One active watch per session+chat.',
+    description: 'Create one persistent event-driven watch for a specific WhatsApp chat. Every new incoming message wakes the opening Hermes session; the watch stays active across multiple messages until Hermes explicitly calls waha_close_chat_watch. One active watch per session+chat.',
     schema: {
       session: sessionParam(),
       chatId: z.string().describe('Exact WhatsApp chat ID, e.g. 9725...@c.us or 120363...@g.us'),
@@ -97,7 +97,7 @@ export function registerWatchTools(server: McpServer, client: WAHAClient, store 
         origin,
         wakeUrl: resolvedWakeUrl, wakeSecret: resolvedWakeSecret, expiresAt,
       });
-      return `Watch created; WAHA listener webhook ${webhook}. ${compactJson(publicWatch(watch))}`;
+      return `Watch created and remains active across incoming messages until explicitly closed with waha_close_chat_watch; WAHA listener webhook ${webhook}. ${compactJson(publicWatch(watch))}`;
     },
   });
 

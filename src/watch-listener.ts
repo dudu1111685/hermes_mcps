@@ -62,6 +62,19 @@ async function wake(
   const payload: WakePayload = {
     event_type: 'waha.chat_watch.message',
     watch: safeWatch(watch),
+    watch_control: {
+      status: 'active',
+      defaultAction: 'continue_listening',
+      continueListening: true,
+      closeTool: 'waha_close_chat_watch',
+      closeArgs: { watchId: watch.id },
+      instruction: [
+        'This WhatsApp watch remains active after this message.',
+        'Do not close this watch just because one message arrived; people often send one thought across several messages.',
+        'If the message may be incomplete or more context is useful, take no close action and continue listening.',
+        `Only when the sender appears finished and the objective is clear, call waha_close_chat_watch with watchId ${watch.id}.`,
+      ].join(' '),
+    },
     whatsapp: {
       event: body.event || 'message',
       session: body.session || watch.session,

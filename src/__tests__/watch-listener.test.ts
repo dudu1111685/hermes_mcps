@@ -59,7 +59,90 @@ describe('WAHA watch listener', () => {
     expect(wakeCount).toBe(1);
     expect(requestId).toBe(`${watch.id}:message-1`);
     expect(wakeBody.event_type).toBe('waha.chat_watch.message');
+    expect(wakeBody.watch_control).toEqual({
+      status: 'active',
+      defaultAction: 'continue_listening',
+      continueListening: true,
+      closeTool: 'waha_close_chat_watch',
+      closeArgs: { watchId: watch.id },
+      instruction: expect.stringContaining('Do not close this watch just because one message arrived'),
+    });
     expect(JSON.stringify(wakeBody)).not.toContain('wakeSecret');
+  });
+
+  it('keeps the same watch active across multiple incoming messages until explicitly closed', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'waha-listener-'));
+    const store = new WatchStore(join(dir, 'watches.json'));
+    const received: Array<Record<string, unknown>> = [];
+    const hermes = createServer(async (request, response) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of request) chunks.push(Buffer.from(chunk));
+      received.push(JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>);
+      response.writeHead(202, { 'Content-Type': 'application/json' });
+      response.end('{"status":"accepted"}');
+    });
+    const hermesPort = await listen(hermes);
+    const watch = await store.create({
+      session: 'default', chatId: '123@c.us', objective: 'collect the complete request',
+      origin: { platform: 'telegram', chatId: '-1001', chatType: 'group', threadId: '42' },
+      wakeUrl: `http://127.0.0.1:${hermesPort}/webhooks/watch`, wakeSecret: 'secret',
+    });
+    const listener = startWatchListener({
+      host: '127.0.0.1', port: 0, path: '/waha', maxBodyBytes: 1_000_000,
+      wakeTimeoutMs: 2000, store,
+    });
+    servers.push(listener);
+    await new Promise<void>((resolve) => listener.once('listening', resolve));
+    const port = (listener.address() as { port: number }).port;
+
+    for (const [id, body] of [['message-1', 'first part'], ['message-2', 'second part']]) {
+      const result = await fetch(`http://127.0.0.1:${port}/waha`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'message', session: 'default',
+          payload: { id, timestamp: 1, from: '123@c.us', to: 'me@c.us', fromMe: false, body },
+        }),
+      });
+      expect(result.status).toBe(200);
+    }
+
+    expect(received).toHaveLength(2);
+    expect((await store.list({ includeClosed: false })).map((item) => item.id)).toContain(watch.id);
+    expect(received.every((payload) => (payload.watch_control as { status: string }).status === 'active')).toBe(true);
+  });
+
+  it('stops waking after the agent explicitly closes the watch', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'waha-listener-'));
+    const store = new WatchStore(join(dir, 'watches.json'));
+    let wakeCount = 0;
+    const hermes = createServer((_request, response) => {
+      wakeCount += 1;
+      response.writeHead(202, { 'Content-Type': 'application/json' });
+      response.end('{"status":"accepted"}');
+    });
+    const hermesPort = await listen(hermes);
+    const watch = await store.create({
+      session: 'default', chatId: '123@c.us', objective: 'collect the complete request',
+      origin: { platform: 'telegram', chatId: '-1001', chatType: 'group' },
+      wakeUrl: `http://127.0.0.1:${hermesPort}/webhooks/watch`, wakeSecret: 'secret',
+    });
+    await store.close(watch.id);
+    const listener = startWatchListener({
+      host: '127.0.0.1', port: 0, path: '/waha', maxBodyBytes: 1_000_000,
+      wakeTimeoutMs: 2000, store,
+    });
+    servers.push(listener);
+    await new Promise<void>((resolve) => listener.once('listening', resolve));
+    const port = (listener.address() as { port: number }).port;
+    const result = await fetch(`http://127.0.0.1:${port}/waha`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'message', session: 'default',
+        payload: { id: 'message-after-close', from: '123@c.us', fromMe: false, body: 'more' },
+      }),
+    });
+    expect((await result.json()).reason).toBe('no_watch');
+    expect(wakeCount).toBe(0);
   });
 
   it('ignores own and unwatched messages without waking Hermes', async () => {

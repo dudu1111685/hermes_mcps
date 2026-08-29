@@ -63,6 +63,14 @@ export interface WahaWebhookBody {
 export interface WakePayload {
   event_type: 'waha.chat_watch.message';
   watch: Omit<ChatWatch, 'wakeSecret'>;
+  watch_control: {
+    status: 'active';
+    defaultAction: 'continue_listening';
+    continueListening: true;
+    closeTool: 'waha_close_chat_watch';
+    closeArgs: { watchId: string };
+    instruction: string;
+  };
   whatsapp: {
     event: string;
     session: string;

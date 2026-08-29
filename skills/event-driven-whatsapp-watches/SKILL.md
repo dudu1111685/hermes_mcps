@@ -1,7 +1,7 @@
 ---
 name: event-driven-whatsapp-watches
 description: Use when a Hermes agent must monitor a specific WhatsApp chat without polling and resume the exact session that opened the watch.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [whatsapp, waha, webhook, session, automation]
@@ -34,7 +34,7 @@ The watch origin includes platform, chat ID/type, thread ID, user/profile/scope,
 - `waha_watch_chat`: creates one active watch per WAHA session + chat and captures the opening Hermes session automatically.
 - `waha_list_chat_watches`: reads active/closed watches without secrets.
 - `waha_update_chat_watch`: changes bounded scope or expiry.
-- `waha_close_chat_watch`: closes the watch immediately when the objective is complete.
+- `waha_close_chat_watch`: explicitly closes the watch when the conversation is complete. Receiving one message never closes it automatically.
 
 Never pass `_hermesOrigin` manually. Hermes injects it at the native MCP boundary.
 
@@ -50,6 +50,16 @@ Never pass `_hermesOrigin` manually. Hermes injects it at the native MCP boundar
    - WAHA remains `WORKING`;
    - every pre-existing webhook remains present;
    - listener webhook is present.
+
+## Multi-message conversations
+
+People commonly split one thought across several WhatsApp messages. Every wake payload therefore includes `watch_control` with the active state, the exact close tool and arguments, and an instruction to continue listening by default.
+
+- Do not close a watch merely because one message arrived.
+- If the message looks partial, ambiguous, or likely to be followed by more context, leave the watch active. No tool call is needed to continue listening.
+- Each later message wakes the same opening Hermes session again.
+- Close only when the sender appears finished and the objective is sufficiently clear, by calling `waha_close_chat_watch` with the supplied `watchId`.
+- A closed or expired watch never wakes again.
 
 ## WAHA session-update contract
 
@@ -101,8 +111,9 @@ A complete test requires a genuinely new incoming WhatsApp message:
 4. Require listener log `wake_outcome` with `status=202` and response mode `origin_session`.
 5. Confirm the report appears in the opening session and no new webhook session was created.
 6. Confirm the second WAHA event is `duplicate`.
-7. Close the watch and verify it is closed.
-8. Do not send an automatic WhatsApp reply unless explicitly delegated.
+7. Send a second distinct incoming message and confirm the same active watch wakes the same opening session again.
+8. Close the watch explicitly and verify a later message no longer wakes Hermes.
+9. Do not send an automatic WhatsApp reply unless explicitly delegated.
 
 ## Failure diagnosis
 
@@ -116,4 +127,4 @@ A complete test requires a genuinely new incoming WhatsApp message:
 
 ## Completion rule
 
-Do not call the feature working from unit tests, a manually injected payload, or a generic webhook `202` alone. Completion requires a real WAHA message, origin-session delivery, duplicate suppression, and watch closure.
+Do not call the feature working from unit tests, a manually injected payload, or a generic webhook `202` alone. Completion requires multiple real WAHA messages waking the same origin session, duplicate suppression, explicit closure, and proof that a post-close message does not wake.

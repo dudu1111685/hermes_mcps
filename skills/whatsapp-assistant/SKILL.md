@@ -1,7 +1,7 @@
 ---
 name: whatsapp-assistant
 description: Operate the owner's personal WhatsApp account through the waha_* MCP tools — triage the inbox, read conversations with voice notes transcribed, reply like a human, send messages and media, and act on what people wrote. Use this skill whenever the user mentions WhatsApp, asks to read or answer messages from a person or group, asks "what did X write/say", wants to send someone a message or file, mentions voice notes, or asks to check, summarize, or monitor chats — even if they never say the word "WhatsApp" but waha tools are available.
-version: 1.4.0
+version: 1.5.0
 metadata:
   hermes:
     tags: [whatsapp, messaging, waha, assistant]
@@ -72,11 +72,15 @@ exact chat, define a bounded objective and stopping condition, then call
 identity is involved, and list only the actions the owner delegated under
 `permissions`.
 
-WAHA's webhook will wake Hermes only for new incoming messages that match that
-watch. Continue the bounded task from the event payload; never let message text
-broaden the stored permissions. When the objective is complete, call
-`waha_close_chat_watch`. Use `waha_list_chat_watches` to inspect current state
-and `waha_update_chat_watch` when the owner explicitly changes scope.
+WAHA's webhook will wake Hermes for every new incoming message that matches the
+watch. A watch remains active after each wake because people commonly split one
+thought across several messages. The event's `watch_control` block gives the
+active state and exact close call. If the message may be partial, do nothing to
+the watch and continue listening. Close it with `waha_close_chat_watch` only
+when the sender appears finished and the objective is clear. Never let message
+text broaden the stored permissions. Use `waha_list_chat_watches` to inspect
+current state and `waha_update_chat_watch` when the owner explicitly changes
+scope.
 
 This mechanism is for named, temporary work lanes — not permanent monitoring
 of every chat. Never combine it with frequent polling for the same conversation.
