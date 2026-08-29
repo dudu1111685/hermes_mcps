@@ -1,7 +1,7 @@
 ---
 name: event-driven-whatsapp-watches
 description: Use when a Hermes agent must monitor a specific WhatsApp chat without polling and resume the exact session that opened the watch.
-version: 1.1.0
+version: 1.2.0
 metadata:
   hermes:
     tags: [whatsapp, waha, webhook, session, automation]
@@ -31,12 +31,21 @@ The watch origin includes platform, chat ID/type, thread ID, user/profile/scope,
 
 ## Tools
 
-- `waha_watch_chat`: creates one active watch per WAHA session + chat and captures the opening Hermes session automatically.
+- `waha_send_text`: sends a normal message without opening a watch.
+- `waha_send_text_and_watch`: sends a text and opens the watch in one race-safe call. Prefer this when waiting for a reply, so a fast reply cannot arrive between separate send and watch calls.
+- `waha_watch_chat`: opens a watch without sending any message and captures the opening Hermes session automatically.
 - `waha_list_chat_watches`: reads active/closed watches without secrets.
 - `waha_update_chat_watch`: changes bounded scope or expiry.
 - `waha_close_chat_watch`: explicitly closes the watch when the conversation is complete. Receiving one message never closes it automatically.
 
 Never pass `_hermesOrigin` manually. Hermes injects it at the native MCP boundary.
+
+Choose exactly the simplest matching mode:
+
+1. **Send only:** `waha_send_text` or the normal humanized `waha_reply`; no watch is created.
+2. **Send and await replies:** `waha_send_text_and_watch`; it creates the watch before sending and closes the new watch automatically if sending fails.
+3. **Watch only:** `waha_watch_chat`; no outbound WhatsApp message is sent.
+4. **Stop:** `waha_close_chat_watch` once the sender appears finished and the objective is clear.
 
 ## Creating a watch
 

@@ -17,12 +17,16 @@ The stdio MCP and the listener share one private JSON watch store. The listener 
 
 ## MCP tools
 
-- `waha_watch_chat` — create one persistent active watch for an exact session/chat. Each matching message wakes Hermes until explicit closure.
+- `waha_send_text` / `waha_reply` — normal outbound message without a watch.
+- `waha_send_text_and_watch` — send one text and open the persistent watch in one race-safe call. The watch is created first and is closed automatically if the send fails.
+- `waha_watch_chat` — open a persistent active watch without sending a message. Each matching message wakes Hermes until explicit closure.
 - `waha_list_chat_watches` — list active/closed watches without secrets.
 - `waha_update_chat_watch` — change objective, sender scope, permissions, expiry or wake target.
 - `waha_close_chat_watch` — close the watch when the delegated work is finished.
 
 Only one active watch is allowed per `session + chatId`. It does not close after the first message.
+
+Use the combined tool when waiting for a reply. Separate `send` then `watch` calls have a real fast-reply race; separate `watch` then `send` calls leave an unwanted watch if sending fails.
 
 ## Required environment
 
