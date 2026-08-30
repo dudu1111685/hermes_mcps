@@ -59,7 +59,7 @@ async function renewWatch(client: GwsClient, store: GmailWatchStore, cfg: Worker
   const renewed = await client.raw(['users', 'watch'], { userId: 'me' }, {
     topicName,
     labelIds: cfg.labels,
-    labelFilterBehavior: 'INCLUDE',
+    labelFilterBehavior: 'include',
   });
   // Renewal's historyId is a notification baseline, not permission to move the
   // durable processed cursor forward. Preserve the current cursor.
