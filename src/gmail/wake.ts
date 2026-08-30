@@ -8,7 +8,7 @@ function signatureHeaders(body: Buffer, secret: string, requestId: string): Reco
   return {
     'Content-Type': 'application/json',
     'X-Webhook-Timestamp': timestamp,
-    'X-Webhook-Signature-V2': `sha256=${signature}`,
+    'X-Webhook-Signature-V2': signature,
     'X-Request-ID': requestId,
   };
 }

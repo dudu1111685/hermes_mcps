@@ -41,6 +41,10 @@ export async function processGmailHistory(input: {
       if (watch.accountEmail.toLowerCase() !== input.accountEmail.toLowerCase()) continue;
       if (!matchesGmailWatch(watch, message)) continue;
       if (await input.store.wasProcessed(input.accountId, watch.id, message.id)) continue;
+      // A user can close a watch while a multi-message History batch is being
+      // processed. Re-read active state immediately before every wake.
+      const stillActive = (await input.store.list({ accountId: input.accountId })).some((item) => item.id === watch.id);
+      if (!stillActive) continue;
       try {
         const response = await wakeGmailWatch(watch, message, input.wakeTimeoutMs);
         deliveries.push({ watchId: watch.id, messageId: message.id, ok: response.ok, status: response.status });

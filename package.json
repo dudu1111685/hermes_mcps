@@ -35,6 +35,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "qrcode": "^1.5.4",
     "telegram": "^2.26.22",
