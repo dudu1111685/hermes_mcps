@@ -10,9 +10,8 @@ describe('GwsClient live account adapter', () => {
 
   it('returns the complete message object rather than the final nested JSON object', async () => {
     const client = new GwsClient({ timeoutMs: 30_000 });
-    const page = await client.history('1518776');
-    const messageId = page.history?.flatMap((record) => record.messagesAdded ?? [])
-      .map((item) => item.message?.id).find(Boolean);
+    const page = await client.raw(['users', 'messages', 'list'], { userId: 'me', maxResults: 1 });
+    const messageId = page.messages?.[0]?.id;
     expect(messageId).toBeTruthy();
     const message = await client.message(messageId, 'full');
     expect(message.id).toBe(messageId);
