@@ -1,0 +1,79 @@
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+import { matchesGmailWatch } from '../gmail/matcher.js';
+import { processGmailHistory } from '../gmail/processor.js';
+import { GmailWatchStore } from '../gmail/store.js';
+import { GmailMessage } from '../gmail/types.js';
+
+const origin = { platform: 'telegram', chatId: '-1001', chatType: 'group', threadId: '42' };
+
+async function store(): Promise<GmailWatchStore> {
+  const dir = await mkdtemp(join(tmpdir(), 'gmail-watch-'));
+  return new GmailWatchStore(join(dir, 'state.json'));
+}
+
+function message(overrides: Partial<GmailMessage> = {}): GmailMessage {
+  return {
+    id: 'm1', threadId: 't1', labelIds: ['INBOX'], snippet: 'hello',
+    payload: { headers: [
+      { name: 'From', value: 'Alice <alice@example.com>' },
+      { name: 'To', value: 'Me <me@example.com>' },
+      { name: 'Subject', value: 'Concert details' },
+    ] },
+    ...overrides,
+  };
+}
+
+describe('Gmail logical watches', () => {
+  it('matches thread watches only in the exact Gmail thread', async () => {
+    const s = await store();
+    const watch = await s.create({
+      accountId: 'a', accountEmail: 'me@example.com', matchMode: 'thread', gmailThreadId: 't1',
+      objective: 'wait', origin, wakeUrl: 'http://localhost/wake', wakeSecret: 'secret',
+    });
+    expect(matchesGmailWatch(watch, message())).toBe(true);
+    expect(matchesGmailWatch(watch, message({ threadId: 'other' }))).toBe(false);
+  });
+
+  it('matches exact correspondents by direction, not display name', async () => {
+    const s = await store();
+    const watch = await s.create({
+      accountId: 'a', accountEmail: 'me@example.com', matchMode: 'correspondent',
+      correspondents: ['alice@example.com'], direction: 'from', objective: 'wait', origin,
+      wakeUrl: 'http://localhost/wake', wakeSecret: 'secret',
+    });
+    expect(matchesGmailWatch(watch, message())).toBe(true);
+    expect(matchesGmailWatch(watch, message({ payload: { headers: [
+      { name: 'From', value: 'Alice <other@example.com>' }, { name: 'To', value: 'me@example.com' },
+    ] } }))).toBe(false);
+  });
+
+  it('keeps a watch active until explicitly closed', async () => {
+    const s = await store();
+    const watch = await s.create({
+      accountId: 'a', accountEmail: 'me@example.com', matchMode: 'thread', gmailThreadId: 't1',
+      objective: 'wait', origin, wakeUrl: 'http://localhost/wake', wakeSecret: 'secret',
+    });
+    expect((await s.list()).map((item) => item.id)).toContain(watch.id);
+    await s.close(watch.id);
+    expect(await s.list()).toHaveLength(0);
+  });
+
+  it('paginates Gmail history, deduplicates IDs, and advances to response historyId', async () => {
+    const client = {
+      history: vi.fn()
+        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }] }], nextPageToken: 'p2', historyId: '101' })
+        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }, { message: { id: 'm2' } }] }], historyId: '105' }),
+      message: vi.fn(async (id: string) => message({ id, threadId: id === 'm1' ? 't1' : 't2' })),
+    };
+    const s = await store();
+    const result = await processGmailHistory({
+      client: client as never, store: s, accountId: 'a', accountEmail: 'me@example.com', startHistoryId: '100',
+    });
+    expect(result.nextHistoryId).toBe('105');
+    expect(result.messageIds).toEqual(['m1', 'm2']);
+    expect(client.message).toHaveBeenCalledTimes(2);
+  });
+});

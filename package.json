@@ -1,17 +1,21 @@
 {
   "name": "hermes-mcps",
   "version": "1.2.0",
-  "description": "Personal WhatsApp (WAHA) + Telegram (MTProto) MCP servers for AI agents",
+  "description": "WhatsApp, Gmail watch, and Telegram MCP servers for AI agents",
   "main": "dist/index.js",
   "bin": {
     "waha-mcp": "dist/index.js",
     "waha-watch-listener": "dist/watch-listener.js",
+    "gmail-watch-mcp": "dist/gmail/index.js",
+    "gmail-watch-worker": "dist/gmail/worker.js",
     "telegram-mcp": "dist/telegram/index.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "start:watch-listener": "node dist/watch-listener.js",
+    "start:gmail": "node dist/gmail/index.js",
+    "start:gmail-worker": "node dist/gmail/worker.js",
     "start:telegram": "node dist/telegram/index.js",
     "telegram:login": "npm run build && node --env-file-if-exists=.env dist/telegram/login.js",
     "telegram:login:qr": "npm run build && node --env-file-if-exists=.env dist/telegram/login.js --qr",
