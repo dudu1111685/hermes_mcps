@@ -50,6 +50,22 @@ describe('Gmail logical watches', () => {
     ] } }))).toBe(false);
   });
 
+  it('keeps correspondent direction filtering after send-and-watch binds to a thread', async () => {
+    const s = await store();
+    const watch = await s.create({
+      accountId: 'a', accountEmail: 'me@example.com', matchMode: 'correspondent',
+      correspondents: ['alice@example.com'], direction: 'from', objective: 'wait', origin,
+      wakeUrl: 'http://localhost/wake', wakeSecret: 'secret',
+    });
+    const linked = await s.update(watch.id, { matchMode: 'thread', gmailThreadId: 't1' });
+    expect(matchesGmailWatch(linked, message())).toBe(true);
+    expect(matchesGmailWatch(linked, message({ payload: { headers: [
+      { name: 'From', value: 'Me <me@example.com>' },
+      { name: 'To', value: 'Alice <alice@example.com>' },
+      { name: 'Subject', value: 'Concert details' },
+    ] } }))).toBe(false);
+  });
+
   it('keeps a watch active until explicitly closed', async () => {
     const s = await store();
     const watch = await s.create({

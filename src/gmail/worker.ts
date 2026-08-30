@@ -21,7 +21,7 @@ function config(): WorkerConfig {
     project: process.env.GMAIL_PUBSUB_PROJECT,
     subscription: process.env.GMAIL_PUBSUB_SUBSCRIPTION,
     topic: process.env.GMAIL_PUBSUB_TOPIC,
-    labels: (process.env.GMAIL_WATCH_LABEL_IDS || 'INBOX').split(',').map((item) => item.trim()).filter(Boolean),
+    labels: (process.env.GMAIL_WATCH_LABEL_IDS || '').split(',').map((x) => x.trim()).filter(Boolean),
     reconcileInterval: Number(process.env.GMAIL_RECONCILE_SECONDS || 900),
     renewalCheckInterval: Number(process.env.GMAIL_RENEWAL_CHECK_SECONDS || 3600),
   };
@@ -56,11 +56,12 @@ async function renewWatch(client: GwsClient, store: GmailWatchStore, cfg: Worker
   if (!topicName) throw new Error('Set GMAIL_PUBSUB_TOPIC before starting the Gmail worker');
   const expiration = Number(account.watchExpiration || 0);
   if (expiration > Date.now() + 24 * 60 * 60 * 1000) return;
-  const renewed = await client.raw(['users', 'watch'], { userId: 'me' }, {
-    topicName,
-    labelIds: cfg.labels,
-    labelFilterBehavior: 'include',
-  });
+  const watchBody: Record<string, unknown> = { topicName };
+  if (cfg.labels.length > 0) {
+    watchBody.labelIds = cfg.labels;
+    watchBody.labelFilterBehavior = 'include';
+  }
+  const renewed = await client.raw(['users', 'watch'], { userId: 'me' }, watchBody);
   // Renewal's historyId is a notification baseline, not permission to move the
   // durable processed cursor forward. Preserve the current cursor.
   await store.updateAccount({

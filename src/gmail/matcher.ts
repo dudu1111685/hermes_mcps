@@ -12,9 +12,11 @@ export function extractAddresses(value: string): string[] {
 export function matchesGmailWatch(watch: GmailWatch, message: GmailMessage): boolean {
   if (watch.status !== 'active') return false;
   if (watch.expiresAt && Date.parse(watch.expiresAt) <= Date.now()) return false;
-  if (watch.matchMode === 'thread') {
-    if (!watch.gmailThreadId || message.threadId !== watch.gmailThreadId) return false;
-  } else {
+  if (watch.matchMode === 'thread' && (!watch.gmailThreadId || message.threadId !== watch.gmailThreadId)) return false;
+  // Direction remains meaningful after a correspondent watch is bound to a
+  // Gmail thread by gmail_send_and_watch. Without this check, the original
+  // outbound message wakes its own watch before any reply arrives.
+  if (watch.correspondents.length > 0) {
     const from = extractAddresses(header(message, 'From'));
     const recipients = extractAddresses([header(message, 'To'), header(message, 'Cc')].join(','));
     const expected = new Set(watch.correspondents.map((item) => item.toLowerCase()));
