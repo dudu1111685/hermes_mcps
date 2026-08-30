@@ -34,7 +34,7 @@ export class GwsClient {
       env: this.env(), timeout: this.timeoutMs, maxBuffer: 20 * 1024 * 1024,
     });
     const output = `${stdout}\n${stderr}`;
-    const candidates: any[] = [];
+    const candidates: Array<{ value: any; length: number }> = [];
     for (let index = 0; index < output.length; index += 1) {
       if (output[index] !== '{' && output[index] !== '[') continue;
       let depth = 0; let quoted = false; let escaped = false;
@@ -50,13 +50,16 @@ export class GwsClient {
         if (char === '{' || char === '[') depth += 1;
         if (char === '}' || char === ']') depth -= 1;
         if (depth === 0) {
-          try { candidates.push(JSON.parse(output.slice(index, end + 1))); } catch { /* not JSON */ }
+          const raw = output.slice(index, end + 1);
+          try { candidates.push({ value: JSON.parse(raw), length: raw.length }); } catch { /* not JSON */ }
           break;
         }
       }
     }
     if (candidates.length === 0) throw new Error(`gws returned no JSON: ${output.slice(-1000)}`);
-    return candidates.at(-1);
+    // Nested objects are also valid JSON candidates. The complete gws response is
+    // the largest balanced value, not the final nested header/body object.
+    return candidates.reduce((best, item) => item.length > best.length ? item : best).value;
   }
 
   async profile(): Promise<{ emailAddress: string; historyId: string }> {
