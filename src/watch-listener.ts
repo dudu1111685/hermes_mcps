@@ -141,8 +141,20 @@ export async function handleWebhook(
     return;
   }
 
-  const watches = (await options.store.activeMatches(body.session, chatId)).filter((watch) => matchesWatch(watch, body));
+  // Do not pre-filter by one canonical chat ID: GOWS can expose the same
+  // direct conversation simultaneously as @lid and SenderAlt @c.us. Match the
+  // full event against every active watch in this session so alias handling in
+  // matchesWatch remains authoritative.
+  const sessionWatches = await options.store.list({ session: body.session });
+  const watches = sessionWatches.filter((watch) => matchesWatch(watch, body));
   if (watches.length === 0) {
+    console.error(JSON.stringify({
+      type: 'watch_ignored', reason: 'no_watch', event: body.event,
+      messageId: body.payload?.id, session: body.session, chatId, senderId,
+      rawFrom: body.payload?.from, hasMedia: body.payload?.hasMedia ?? false,
+      mediaType: body.payload?.media?.mimetype,
+      activeWatchChats: sessionWatches.map((watch) => watch.chatId),
+    }));
     send(response, 200, { status: 'ignored', reason: 'no_watch' });
     return;
   }

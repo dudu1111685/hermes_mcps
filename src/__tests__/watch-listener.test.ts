@@ -70,6 +70,53 @@ describe('WAHA watch listener', () => {
     expect(JSON.stringify(wakeBody)).not.toContain('wakeSecret');
   });
 
+  it('wakes an LID-stored direct watch for a real GOWS voice-note event with SenderAlt', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'waha-listener-'));
+    const store = new WatchStore(join(dir, 'watches.json'));
+    let wakeBody: Record<string, any> = {};
+    const hermes = createServer(async (request, response) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of request) chunks.push(Buffer.from(chunk));
+      wakeBody = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      response.writeHead(202, { 'Content-Type': 'application/json' });
+      response.end('{"status":"accepted"}');
+    });
+    const hermesPort = await listen(hermes);
+    const watch = await store.create({
+      session: 'shlomo_erentroy', chatId: '29231580975281@lid', objective: 'collect voice reply',
+      allowedSenders: ['972545288019@c.us'],
+      origin: { platform: 'telegram', chatId: '-1001', chatType: 'group', threadId: '42' },
+      wakeUrl: `http://127.0.0.1:${hermesPort}/webhooks/watch`, wakeSecret: 'secret',
+    });
+    const listener = startWatchListener({
+      host: '127.0.0.1', port: 0, path: '/waha', maxBodyBytes: 1_000_000,
+      wakeTimeoutMs: 2000, store,
+    });
+    servers.push(listener);
+    await new Promise<void>((resolve) => listener.once('listening', resolve));
+    const port = (listener.address() as { port: number }).port;
+    const payload = {
+      event: 'message', session: 'shlomo_erentroy',
+      payload: {
+        id: 'false_29231580975281@lid_voice', timestamp: 1788114986,
+        from: '29231580975281@lid', fromMe: false, hasMedia: true,
+        media: { url: 'http://localhost:3000/api/files/voice.oga', mimetype: 'audio/ogg; codecs=opus' },
+        _data: { Info: {
+          Chat: '29231580975281@lid', Sender: '29231580975281@lid',
+          SenderAlt: '972545288019@s.whatsapp.net', Type: 'media', MediaType: 'ptt',
+        } },
+      },
+    };
+    const result = await fetch(`http://127.0.0.1:${port}/waha`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    expect(result.status).toBe(200);
+    expect((await result.json()).status).toBe('woken');
+    expect(wakeBody.watch.id).toBe(watch.id);
+    expect(wakeBody.whatsapp.chatId).toBe('972545288019@c.us');
+    expect(wakeBody.whatsapp.message.media.mimetype).toContain('audio/ogg');
+  });
+
   it('keeps the same watch active across multiple incoming messages until explicitly closed', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'waha-listener-'));
     const store = new WatchStore(join(dir, 'watches.json'));
