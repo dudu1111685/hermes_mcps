@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { matchesGmailWatch } from '../gmail/matcher.js';
-import { processGmailHistory } from '../gmail/processor.js';
+import { collectHistoryMessages, processGmailHistory } from '../gmail/processor.js';
 import { GmailWatchStore } from '../gmail/store.js';
 import { GmailMessage } from '../gmail/types.js';
 
@@ -77,19 +77,38 @@ describe('Gmail logical watches', () => {
     expect(await s.list()).toHaveLength(0);
   });
 
-  it('paginates Gmail history, deduplicates IDs, and advances to response historyId', async () => {
+  it('paginates Gmail history, deduplicates IDs, bounds gws concurrency, and uses metadata', async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
     const client = {
       history: vi.fn()
-        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }] }], nextPageToken: 'p2', historyId: '101' })
-        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }, { message: { id: 'm2' } }] }], historyId: '105' }),
-      message: vi.fn(async (id: string) => message({ id, threadId: id === 'm1' ? 't1' : 't2' })),
+        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }, { message: { id: 'm2' } }, { message: { id: 'm3' } }, { message: { id: 'm4' } }, { message: { id: 'm5' } }] }], nextPageToken: 'p2', historyId: '101' })
+        .mockResolvedValueOnce({ history: [{ messagesAdded: [{ message: { id: 'm1' } }, { message: { id: 'm6' } }, { message: { id: 'm7' } }, { message: { id: 'm8' } }, { message: { id: 'm9' } }, { message: { id: 'm10' } }] }], historyId: '105' }),
+      message: vi.fn(async (id: string, format: string) => {
+        inFlight += 1; maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        inFlight -= 1;
+        return message({ id, threadId: id === 'm1' ? 't1' : 't2' });
+      }),
     };
-    const s = await store();
-    const result = await processGmailHistory({
-      client: client as never, store: s, accountId: 'a', accountEmail: 'me@example.com', startHistoryId: '100',
-    });
+    const result = await collectHistoryMessages(client as never, '100');
     expect(result.nextHistoryId).toBe('105');
-    expect(result.messageIds).toEqual(['m1', 'm2']);
-    expect(client.message).toHaveBeenCalledTimes(2);
+    expect(result.messages.map((item) => item.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10']);
+    expect(client.message).toHaveBeenCalledTimes(10);
+    expect(client.message).toHaveBeenCalledWith('m10', 'metadata', ['From', 'To', 'Cc', 'Subject', 'Date']);
+    expect(maxInFlight).toBeLessThanOrEqual(4);
+  });
+
+  it('does not fetch messages when there are no active watches', async () => {
+    const client = {
+      history: vi.fn().mockResolvedValue({ history: [{ messagesAdded: [{ message: { id: 'm1' } }] }], historyId: '101' }),
+      message: vi.fn(),
+    };
+    const result = await processGmailHistory({
+      client: client as never, store: await store(), accountId: 'a', accountEmail: 'me@example.com', startHistoryId: '100',
+    });
+    expect(result.nextHistoryId).toBe('101');
+    expect(result.messageIds).toEqual([]);
+    expect(client.message).not.toHaveBeenCalled();
   });
 });

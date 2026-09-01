@@ -4,6 +4,10 @@ import { GmailWatchStore } from './store.js';
 import { GmailMessage } from './types.js';
 import { wakeGmailWatch } from './wake.js';
 
+const MATCH_METADATA_HEADERS = ['From', 'To', 'Cc', 'Subject', 'Date'];
+// ponytail: cap at four child gws processes; raise only after measuring backlog latency.
+const MESSAGE_FETCH_CONCURRENCY = 4;
+
 export interface GmailProcessResult {
   startHistoryId: string;
   nextHistoryId: string;
@@ -11,7 +15,11 @@ export interface GmailProcessResult {
   deliveries: Array<{ watchId: string; messageId: string; ok: boolean; status: number; error?: string }>;
 }
 
-export async function collectHistoryMessages(client: GwsClient, startHistoryId: string): Promise<{ nextHistoryId: string; messages: GmailMessage[] }> {
+export async function collectHistoryMessages(
+  client: GwsClient,
+  startHistoryId: string,
+  fetchMessages = true,
+): Promise<{ nextHistoryId: string; messages: GmailMessage[] }> {
   let pageToken: string | undefined;
   let nextHistoryId = startHistoryId;
   const ids = new Set<string>();
@@ -25,7 +33,17 @@ export async function collectHistoryMessages(client: GwsClient, startHistoryId: 
     }
     pageToken = page.nextPageToken;
   } while (pageToken);
-  const messages = await Promise.all([...ids].map((id) => client.message(id, 'full')));
+  if (!fetchMessages) return { nextHistoryId, messages: [] };
+  const idsArray = [...ids];
+  const messages = new Array<GmailMessage>(idsArray.length);
+  let nextIndex = 0;
+  const fetchWorker = async (): Promise<void> => {
+    while (nextIndex < idsArray.length) {
+      const index = nextIndex++;
+      messages[index] = await client.message(idsArray[index], 'metadata', MATCH_METADATA_HEADERS);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(MESSAGE_FETCH_CONCURRENCY, idsArray.length) }, () => fetchWorker()));
   return { nextHistoryId, messages };
 }
 
@@ -33,8 +51,8 @@ export async function processGmailHistory(input: {
   client: GwsClient; store: GmailWatchStore; accountId: string; accountEmail: string;
   startHistoryId: string; wakeTimeoutMs?: number;
 }): Promise<GmailProcessResult> {
-  const { nextHistoryId, messages } = await collectHistoryMessages(input.client, input.startHistoryId);
   const watches = await input.store.list({ accountId: input.accountId });
+  const { nextHistoryId, messages } = await collectHistoryMessages(input.client, input.startHistoryId, watches.length > 0);
   const deliveries: GmailProcessResult['deliveries'] = [];
   for (const message of messages) {
     for (const watch of watches) {

@@ -73,8 +73,11 @@ export class GwsClient {
     })]);
   }
 
-  async message(id: string, format: 'full' | 'metadata' = 'full'): Promise<GmailMessage> {
-    return this.json(['gmail', 'users', 'messages', 'get', '--params', JSON.stringify({ userId: 'me', id, format })]);
+  async message(id: string, format: 'full' | 'metadata' = 'full', metadataHeaders?: string[]): Promise<GmailMessage> {
+    return this.json(['gmail', 'users', 'messages', 'get', '--params', JSON.stringify({
+      userId: 'me', id, format,
+      ...(format === 'metadata' && metadataHeaders?.length ? { metadataHeaders } : {}),
+    })]);
   }
 
   async sendText(input: { to: string[]; subject: string; body: string; cc?: string[]; bcc?: string[] }): Promise<{ id: string; threadId: string }> {
