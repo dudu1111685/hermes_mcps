@@ -13,6 +13,24 @@ import { isConfigured as sonioxConfigured, transcribeWithCache } from '../utils/
 // ---------- Shared directory cache (contacts + chats overview, TTL 5 min) ----------
 
 const DIRECTORY_TTL_MS = 5 * 60 * 1000;
+// The GOWS chats overview endpoint can hang for tens of seconds on large
+// accounts. Contact resolution must not wait for it: saved contacts are the
+// authoritative fast path, while chat/group enrichment is best-effort.
+const CHAT_OVERVIEW_SOFT_TIMEOUT_MS = 2_500;
+
+function bestEffortWithin<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => finish(fallback), timeoutMs);
+    promise.then(finish).catch(() => finish(fallback));
+  });
+}
 
 interface ChatOverview extends ChatInfo {
   lastMessage?: { timestamp?: number };
@@ -34,10 +52,17 @@ async function getDirectory(client: WAHAClient, session: string): Promise<Direct
   }
   const cached = directoryCache.get(session);
   if (cached && Date.now() - cached.fetchedAt < DIRECTORY_TTL_MS) return cached;
-  const [contacts, chats] = await Promise.all([
-    client.get<ContactInfo[]>('/api/contacts/all', { session }),
+  // Start both requests together, but only contacts are required. On large GOWS
+  // stores `/chats/overview` may never return; falling back to contacts keeps
+  // recently saved Google/phone contacts resolvable in a few seconds.
+  const contactsPromise = client.get<ContactInfo[]>('/api/contacts/all', { session });
+  const chatsPromise = bestEffortWithin(
     client.get<ChatOverview[]>(`/api/${encodeURIComponent(session)}/chats/overview`, { limit: 200 }),
-  ]);
+    CHAT_OVERVIEW_SOFT_TIMEOUT_MS,
+    [],
+  );
+  const contacts = await contactsPromise;
+  const chats = await chatsPromise;
   const entry: Directory = { contacts, chats, fetchedAt: Date.now() };
   directoryCache.set(session, entry);
   return entry;
